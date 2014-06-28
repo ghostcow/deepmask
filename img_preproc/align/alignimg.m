@@ -21,8 +21,8 @@ function faceImg = alignimg(imPath, landmarks, alignparams)
     dy = bottom - top;
 
     % set crop region in the canonical coordinate system
-    horRatio = 1.6;
-    topRatio = 2;
+    horRatio = 1.955;
+    topRatio = 1.8;
     bottomRatio = 1.2;
 
     x0 = cx - dx * horRatio;
