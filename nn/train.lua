@@ -62,6 +62,7 @@ end
 ----------------------------------------------------------------------
 print '==> configuring optimizer - SGD'
 -- TODO: need to figure out all of this parameters
+optimMethod = optim.sgd
 optimState = {
     learningRate = opt.learningRate,
     weightDecay = opt.weightDecay,
@@ -108,19 +109,19 @@ for t = 1,trainData:size(),opt.batchSize do
 
     -- create closure to evaluate f(X) and df/dX
     local feval = function(x)
-    -- get new parameters
-     if x ~= parameters then
+        -- get new parameters
+        if x ~= parameters then
          parameters:copy(x)
-     end
+        end
 
-     -- reset gradients
-     gradParameters:zero()
+        -- reset gradients
+        gradParameters:zero()
 
-     -- f is the average of all criterions
-     local f = 0
+        -- f is the average of all criterions
+        local f = 0
 
-     -- evaluate function for complete mini batch
-     for i = 1,#inputs do
+        -- evaluate function for complete mini batch
+        for i = 1,#inputs do
          -- estimate f
          local output = model:forward(inputs[i])
          local err = criterion:forward(output, targets[i])
@@ -132,15 +133,17 @@ for t = 1,trainData:size(),opt.batchSize do
 
          -- update confusion
          confusion:add(output, targets[i])
-     end
+        end
 
-     -- normalize gradients and f(X)
-     gradParameters:div(#inputs)
-     f = f/#inputs
+        -- normalize gradients and f(X)
+        gradParameters:div(#inputs)
+        f = f/#inputs
 
-     -- return f and df/dX
-     return f,gradParameters
+        -- return f and df/dX
+        return f,gradParameters
     end
+
+    optimMethod(feval, parameters, optimState)
 end
 
  -- time taken
