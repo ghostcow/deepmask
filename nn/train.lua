@@ -22,10 +22,10 @@ if not opt then
     cmd:option('-save', 'results', 'subdirectory to save/log experiments in')
     cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:option('-plot', false, 'live plot')
-    cmd:option('-learningRate', 1e-3, 'learning rate at t=0')
-    cmd:option('-batchSize', 1, 'mini-batch size (1 = pure stochastic)')
+    cmd:option('-learningRate', 0.01, 'learning rate at t=0')
+    cmd:option('-batchSize', 128, 'mini-batch size (1 = pure stochastic)')
     cmd:option('-weightDecay', 0, 'weight decay (SGD only)')
-    cmd:option('-momentum', 0, 'momentum (SGD only)')
+    cmd:option('-momentum', 0.9, 'momentum (SGD only)')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
@@ -61,13 +61,13 @@ end
 
 ----------------------------------------------------------------------
 print '==> configuring optimizer - SGD'
--- TODO: need to figure out all of this parameters
+-- TODO: need to figure out all of this parameters - see training in deepface article
 optimMethod = optim.sgd
 optimState = {
     learningRate = opt.learningRate,
     weightDecay = opt.weightDecay,
     momentum = opt.momentum,
-    learningRateDecay = 1e-7
+    learningRateDecay = 1e-7 -- TODO: "changed manually" at deepface training
 }
 
 
