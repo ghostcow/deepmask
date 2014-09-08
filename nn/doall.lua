@@ -14,6 +14,7 @@ cmd:option('-threads', 2, 'number of threads')
 -- data:
 cmd:option('-size', 'full', 'how many samples do we load: small | full | extra')
 -- training:
+-- TODO: update to defaults values to match deepface training params
 cmd:option('-save', 'results', 'subdirectory to save/log experiments in')
 cmd:option('-plot', false, 'live plot')
 cmd:option('-learningRate', 1e-3, 'learning rate at t=0')
