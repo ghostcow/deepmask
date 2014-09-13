@@ -1,6 +1,5 @@
 import glob
 import os
-import re
 import shutil
 
 DEV_IMAGE_DIR_PATH = 'dev'
