@@ -2,6 +2,7 @@ import os
 import SUFR
 import lfw
 import pubfig83
+import pubfig
 
 
 def main(data_dir, dst_dir):
@@ -12,6 +13,7 @@ def main(data_dir, dst_dir):
 
     lfw.main(os.path.join(data_dir, 'lfw'), dst_dir)
     pubfig83.main(os.path.join(data_dir, 'pubfig83'), dst_dir)
+    pubfig.main(os.path.join(data_dir, 'pubfig'), dst_dir)
     SUFR.main(os.path.join(data_dir, 'SUFRData'), dst_dir)
 
 if __name__ == "__main__":
