@@ -13,7 +13,7 @@ def generate_image_to_identity_dict(info_file_path):
     for i in xrange(len(info_data)):
         ident = re.match("[0-9]* # ([a-zA-Z ,.'-]+)", info_data[i]).groups()[0]
         # images are counted from 1
-        image_to_ident[i+1] = ident
+        image_to_ident[i+1] = ident.replace(' ', '_')
 
     return image_to_ident
 
