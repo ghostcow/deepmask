@@ -33,35 +33,37 @@ end
 model = nn.Sequential()
 
 -- C1 layer
-model:add(ccn2.SpatialConvolution(3, 32, 11)) -- 2
+model:add(ccn2.SpatialConvolution(3, 32, 11)) -- 1
 model:add(nn.ReLU())
 
 -- M2 layer
-model:add(ccn2.SpatialMaxPooling(3,2)) -- 4
+model:add(ccn2.SpatialMaxPooling(3,2)) -- 3
 
 -- C3 layer
-model:add(ccn2.SpatialConvolution(32, 16, 9)) --5
+model:add(ccn2.SpatialConvolution(32, 16, 9)) -- 4
 model:add(nn.ReLU())
 
 -- L4 layer
-model:add(ccn2.SpatialConvolutionLocal(16, 16, 63, 9)) -- 7
+model:add(ccn2.SpatialConvolutionLocal(16, 16, 63, 9)) -- 6
 model:add(nn.ReLU())
 
 -- L5 layer
-model:add(ccn2.SpatialConvolutionLocal(16, 16, 55, 7, 2)) -- 9
+model:add(ccn2.SpatialConvolutionLocal(16, 16, 55, 7, 2)) -- 8
 model:add(nn.ReLU())
 
 -- L6 layer
-model:add(ccn2.SpatialConvolutionLocal(16, 16, 25, 5)) -- 11
+model:add(ccn2.SpatialConvolutionLocal(16, 16, 25, 5)) -- 10
 model:add(nn.ReLU())
 
 
---TODO: needs to be in format 1X1XWIDTHXdepth (maybe sue transpose)
-model:add(nn.Reshape(16*16*21)) -- transform the output into a vector
+-- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
+model:add(nn.Transpose({4,1},{4,2},{4,3}))
+-- transform the output into a vector
+model:add(nn.Reshape(16*21*21, true))
 
 
 -- F7 layer
-model:add(nn.Linear(16*16*21, 4096)) -- 14
+model:add(nn.Linear(16*21*21, 4096)) -- 14
 model:add(nn.ReLU())
 model:add(nn.Dropout())
 
@@ -80,6 +82,6 @@ if opt.visualize then
     gfx.image(model:get(6).weight, {zoom=2, legend='L4'})
     gfx.image(model:get(8).weight, {zoom=2, legend='L5'})
     gfx.image(model:get(10).weight, {zoom=2, legend='L6'})
-    gfx.image(model:get(13).weight, {zoom=2, legend='F7'})
-    gfx.image(model:get(16).weight, {zoom=2, legend='F8'})
+    gfx.image(model:get(14).weight, {zoom=2, legend='F7'})
+    gfx.image(model:get(17).weight, {zoom=2, legend='F8'})
 end
