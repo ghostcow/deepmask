@@ -25,7 +25,7 @@ if not opt then
     cmd:text('Deepface torch7 model')
     cmd:text()
     cmd:text('Options:')
-    cmd:option('-visualize', true, 'visualize input data and weights during training')
+    cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
@@ -74,12 +74,12 @@ print(model)
 
 if opt.visualize then
     print '==> visualizing filters'
-    gfx.image(model:get(2).weight, {zoom=2, legend='C1'})
-    gfx.image(model:get(5).weight, {zoom=2, legend='C3'})
+    gfx.image(model:get(1).weight, {zoom=2, legend='C1'})
+    gfx.image(model:get(4).weight, {zoom=2, legend='C3'})
     -- NOTE: gfx fails to visualize local layers, this bug is related to the filter size
-    gfx.image(model:get(7).weight, {zoom=2, legend='L4'})
-    gfx.image(model:get(9).weight, {zoom=2, legend='L5'})
-    gfx.image(model:get(11).weight, {zoom=2, legend='L6'})
-    gfx.image(model:get(14).weight, {zoom=2, legend='F7'})
-    gfx.image(model:get(17).weight, {zoom=2, legend='F8'})
+    gfx.image(model:get(6).weight, {zoom=2, legend='L4'})
+    gfx.image(model:get(8).weight, {zoom=2, legend='L5'})
+    gfx.image(model:get(10).weight, {zoom=2, legend='L6'})
+    gfx.image(model:get(13).weight, {zoom=2, legend='F7'})
+    gfx.image(model:get(16).weight, {zoom=2, legend='F8'})
 end
