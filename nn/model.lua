@@ -13,7 +13,6 @@ require 'gfx.js'
 
 
 -- TODO: ask about cuda fully connected layer
--- TODO: added Dropout layer with correct param
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
