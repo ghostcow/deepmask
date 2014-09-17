@@ -17,28 +17,21 @@ cmd:option('-size', 'full', 'how many samples do we load: small | full | extra')
 -- TODO: update to defaults values to match deepface training params
 cmd:option('-save', 'results', 'subdirectory to save/log experiments in')
 cmd:option('-plot', false, 'live plot')
-cmd:option('-learningRate', 1e-3, 'learning rate at t=0')
-cmd:option('-batchSize', 1, 'mini-batch size (1 = pure stochastic)')
-cmd:option('-momentum', 0, 'momentum (SGD only)')
+cmd:option('-learningRate', 0.01, 'learning rate at t=0')
+cmd:option('-batchSize', 32, 'mini-batch size (1 = pure stochastic)')
+cmd:option('-weightDecay', 0, 'weight decay for SGD')
+cmd:option('-momentum', 0.9, 'momentum for SGD')
 cmd:text()
 opt = cmd:parse(arg or {})
 
 -- nb of threads and fixed seed (for repeatable experiments)
-if opt.type == 'float' then
-    print('==> switching to floats')
-    torch.setdefaulttensortype('torch.FloatTensor')
-elseif opt.type == 'cuda' then
-    print('==> switching to CUDA')
-    require 'cunn'
-    torch.setdefaulttensortype('torch.FloatTensor')
-end
 torch.setnumthreads(opt.threads)
 torch.manualSeed(opt.seed)
 
 ----------------------------------------------------------------------
 print '==> executing all'
 
-dofile 'data.lua'
+dofile 'random_data.lua'
 dofile 'model.lua'
 dofile 'train.lua'
 --dofile 'test.lua'

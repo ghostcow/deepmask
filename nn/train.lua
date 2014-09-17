@@ -23,9 +23,9 @@ if not opt then
     cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:option('-plot', false, 'live plot')
     cmd:option('-learningRate', 0.01, 'learning rate at t=0')
-    cmd:option('-batchSize', 128, 'mini-batch size (1 = pure stochastic)')
-    cmd:option('-weightDecay', 0, 'weight decay (SGD only)')
-    cmd:option('-momentum', 0.9, 'momentum (SGD only)')
+    cmd:option('-batchSize', 32, 'mini-batch size (1 = pure stochastic)')
+    cmd:option('-weightDecay', 0, 'weight decay for SGD')
+    cmd:option('-momentum', 0.9, 'momentum for SGD')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
@@ -94,19 +94,18 @@ for t = 1,trainData:size(),opt.batchSize do
     xlua.progress(t, trainData:size())
 
     -- create mini batch
-    local inputs = {}
-    local targets = {}
-    for i = t,math.min(t+opt.batchSize-1,trainData:size()) do
-         -- load new sample
-         local input = trainData.data[shuffle[i]]
-         local target = trainData.labels[shuffle[i]]
-
-         -- NOTE: we suppport training on CUDA only
-         input = input:cuda()
-
-         table.insert(inputs, input)
-         table.insert(targets, target)
+    local inputs = torch.Tensor(opt.batchSize, 3, imagedim, imagedim)
+    local targets = torch.Tensor(opt.batchSize)
+    if ((t+opt.batchSize-1) > trainData:size()) then
+      -- we don't use the last samples
+      break
     end
+    for i = t,math.min(t+opt.batchSize-1,trainData:size()) do
+         -- NOTE: we suppport training on CUDA only
+         inputs[{i-t+1}] = trainData.data[shuffle[i]]
+         targets[{i-t+1}] = trainData.labels[shuffle[i]]
+    end
+    inputs = inputs:cuda()
 
     -- create closure to evaluate f(X) and df/dX
     local feval = function(x)
@@ -118,27 +117,25 @@ for t = 1,trainData:size(),opt.batchSize do
         -- reset gradients
         gradParameters:zero()
 
-        -- f is the average of all criterions
-        local f = 0
-
         -- evaluate function for complete mini batch
-        for i = 1,#inputs do
-         -- estimate f
-         local output = model:forward(inputs[i])
-         local err = criterion:forward(output, targets[i])
-         f = f + err
-
-         -- estimate df/dW
-         local df_do = criterion:backward(output, targets[i])
-         model:backward(inputs[i], df_do)
-
-         -- update confusion
-         confusion:add(output, targets[i])
-        end
+        -- estimate f
+        local output = model:forward(inputs)
+        numInputs = inputs:size()[1]
+        print(numInputs)
+        local err = criterion:forward(output, targets)
+        
+        -- f is the average of all criterions
+        local f = err
+        
+        -- estimate df/dW
+        local df_do = criterion:backward(output, targets)
+        model:backward(inputs, df_do)
+        
+        -- update confusion
+        -- confusion:add(output, targets)
 
         -- normalize gradients and f(X)
-        gradParameters:div(#inputs)
-        f = f/#inputs
+        gradParameters:div(numInputs)
 
         -- return f and df/dX
         return f,gradParameters

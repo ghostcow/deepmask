@@ -11,17 +11,23 @@ if not opt then
     cmd:text('data for Deepface torch7 model')
     cmd:text()
     cmd:text('Options:')
-    cmd:option('-visualize', false, 'visualize input data and weights during training')
+    cmd:option('-visualize', true, 'visualize input data and weights during training')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
 
-data_file = '../data_set/cfw/cfw_small.mat'
-data = mattorch.load(data_file)
+labels = torch.Tensor(1,1000)
+labels:fill(1)
+data = {
+  train = torch.rand(152,152,3,1000),
+  test = torch.rand(152,152,3,1000),
+  trainLabels = labels,
+  testLabels = labels 
+}
 trsize = data.train:size()[4]
 tesize = data.test:size()[4]
 
-numPerosns = 200
+numPersons = 200
 
 trainData = {
   -- the original matlab format is nImages x 3 x height x width (where height=width=152)

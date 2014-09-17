@@ -36,7 +36,6 @@ for iFigure = 1:nPersons
         im = im2double(im);
         im = imresize(im, imSize);
         % convert shape from 152x152x3 3x152x152
-        % pay attention that this operation also flip between height&width
         im = shiftdim(im, 2); 
         
         if isTrain(iImage)

@@ -1,7 +1,7 @@
 ----------------------------------------------------------------------
 -- Deepface nn model for torch7
 --
--- Input: 3X152X152X(batchsize)
+-- Input: (batchsize)X3X152X152
 -- Outout: 4030 vector (aka SFC ID)
 ----------------------------------------------------------------------
 require 'nn'
@@ -11,6 +11,13 @@ require 'torch'
 require 'image'
 require 'gfx.js'
 
+imagedim = 152
+-- filter sizes for layers C1,C3,L4,L5,L6
+filtersSize = {11, 9, 9, 7, 5}
+maxPoolingStride = 2
+L5_stride = 2
+-- number of output maps for layers C1 
+numMaps = {32, 16, 16, 16, 16}
 
 -- TODO: ask about cuda fully connected layer
 -- TODO: added Dropout layer with correct param
@@ -25,45 +32,59 @@ if not opt then
     cmd:text('Deepface torch7 model')
     cmd:text()
     cmd:text('Options:')
-    cmd:option('-visualize', false, 'visualize input data and weights during training')
+    cmd:option('-visualize', true, 'visualize input data and weights during training')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
 
 model = nn.Sequential()
 
+-- convert from Torch batchSizeX3XheightXwidth format to ccn2 format 3XheightXwidthXbatchSize
+model:add(nn.Transpose({1,4},{1,3},{1,2}))
+
+-- Map construction format
+-- ccn2.SpatialConvolution(inputDim, #feature-maps, filter-size)
+-- ccn2.SpatialMaxPooling(neighberhoodSize, stride)
+-- ccn2.SpatialConvolutionLocal(inputDim, #feature-maps, inputDim, filter-size)
+
 -- C1 layer
-model:add(ccn2.SpatialConvolution(3, 32, 11)) -- 1
+model:add(ccn2.SpatialConvolution(3, numMaps[1], filtersSize[1])) -- 1
 model:add(nn.ReLU())
+outputMapDim = imagedim - filtersSize[1] + 1
 
 -- M2 layer
-model:add(ccn2.SpatialMaxPooling(3,2)) -- 3
+model:add(ccn2.SpatialMaxPooling(3,maxPoolingStride)) -- 3
+outputMapDim = outputMapDim / maxPoolingStride
 
 -- C3 layer
-model:add(ccn2.SpatialConvolution(32, 16, 9)) -- 4
+model:add(ccn2.SpatialConvolution(numMaps[1], numMaps[2], filtersSize[2])) -- 4
 model:add(nn.ReLU())
+outputMapDim = outputMapDim - filtersSize[2] + 1
 
 -- L4 layer
-model:add(ccn2.SpatialConvolutionLocal(16, 16, 63, 9)) -- 6
+inputDim = outputMapDim
+model:add(ccn2.SpatialConvolutionLocal(numMaps[2], numMaps[3], inputDim, filtersSize[3])) -- 6
 model:add(nn.ReLU())
+outputMapDim = outputMapDim - filtersSize[3] + 1
 
 -- L5 layer
-model:add(ccn2.SpatialConvolutionLocal(16, 16, 55, 7, 2)) -- 8
+model:add(ccn2.SpatialConvolutionLocal(numMaps[3], numMaps[4], outputMapDim, filtersSize[4], L5_stride)) -- 8
 model:add(nn.ReLU())
 
 -- L6 layer
-model:add(ccn2.SpatialConvolutionLocal(16, 16, 25, 5)) -- 10
+inputDim = 25 -- TODO: some formula with outputMapDim & L5_stride
+model:add(ccn2.SpatialConvolutionLocal(numMaps[4], numMaps[5], inputDim, filtersSize[5])) -- 10
 model:add(nn.ReLU())
-
+outputDim = inputDim - filtersSize[5] + 1
 
 -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
 model:add(nn.Transpose({4,1},{4,2},{4,3}))
 -- transform the output into a vector
-model:add(nn.Reshape(16*21*21, true))
+model:add(nn.Reshape(numMaps[4]*outputDim*outputDim, true))
 
 
 -- F7 layer
-model:add(nn.Linear(16*21*21, 4096)) -- 14
+model:add(nn.Linear(numMaps[4]*outputDim*outputDim, 4096)) -- 14
 model:add(nn.ReLU())
 model:add(nn.Dropout())
 
@@ -76,12 +97,12 @@ print(model)
 
 if opt.visualize then
     print '==> visualizing filters'
-    gfx.image(model:get(1).weight, {zoom=2, legend='C1'})
-    gfx.image(model:get(4).weight, {zoom=2, legend='C3'})
+    gfx.image(model:get(2).weight, {zoom=2, legend='C1'})
+    gfx.image(model:get(5).weight, {zoom=2, legend='C3'})
     -- NOTE: gfx fails to visualize local layers, this bug is related to the filter size
-    gfx.image(model:get(6).weight, {zoom=2, legend='L4'})
-    gfx.image(model:get(8).weight, {zoom=2, legend='L5'})
-    gfx.image(model:get(10).weight, {zoom=2, legend='L6'})
-    gfx.image(model:get(14).weight, {zoom=2, legend='F7'})
-    gfx.image(model:get(17).weight, {zoom=2, legend='F8'})
+    gfx.image(model:get(7).weight, {zoom=2, legend='L4'})
+    gfx.image(model:get(9).weight, {zoom=2, legend='L5'})
+    gfx.image(model:get(11).weight, {zoom=2, legend='L6'})
+    gfx.image(model:get(15).weight, {zoom=2, legend='F7'})
+    gfx.image(model:get(18).weight, {zoom=2, legend='F8'})
 end
