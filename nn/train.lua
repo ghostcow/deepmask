@@ -41,10 +41,11 @@ criterion:cuda()
 ----------------------------------------------------------------------
 print '==> defining some tools'
 
--- classes
--- TODO: is this intersting for us?, If so, need to update classes
-classes = {'1','2','3','4','5','6','7','8','9','0'}
-
+-- classes - classes are defined by numPersons
+classes = {}
+for i=1,numPersons do
+  table.insert(classes, tostring(i))
+end
 -- This matrix records the current confusion across classes
 confusion = optim.ConfusionMatrix(classes)
 

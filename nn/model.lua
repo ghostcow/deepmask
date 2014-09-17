@@ -67,8 +67,8 @@ model:add(nn.Linear(16*21*21, 4096)) -- 14
 model:add(nn.ReLU())
 model:add(nn.Dropout())
 
--- F8 layer
-model:add(nn.Linear(4096, 4030)) -- 17
+-- F8 layer - classification into class out of numPersons classses
+model:add(nn.Linear(4096, numPersons)) -- 17
 
 
 print '==> here is the model:'
