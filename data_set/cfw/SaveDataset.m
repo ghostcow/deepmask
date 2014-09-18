@@ -1,18 +1,28 @@
+% outputFilePath = 'cfw_small.mat';
+% nPersons = 200
+
+% The full dataset is saved in 3 chunks to avoid OUT OF MEMORY error
+outputFilePath = 'cfw_575_1000.mat';
+
 mainDir = '/media/data/datasets/CFW/filtered_faces';
 figDirs = dir(mainDir);
 figDirs = figDirs(3:end);
 imSize = [152,152];
 
-%% small dataset - use only 200 persons
-nPersons = 200;
+%% 0.7 of the images are used for training, the rest for test
 trainPerc = 0.7;
 
-train = zeros(0, 3, imSize(1), imSize(2));
-trainLabels = [];
-test = zeros(0, 3, imSize(1), imSize(2));
-testLabels = [];
+numImagesMax = 50000;
+numImagesMaxTrain = round(numImagesMax*trainPerc);
+numImagesMaxTest = numImagesMax - numImagesMaxTrain;
 
-for iFigure = 1:nPersons
+train = zeros(numImagesMaxTrain, 3, imSize(1), imSize(2));
+trainLabels = zeros(numImagesMaxTrain, 1);
+test = zeros(numImagesMaxTest, 3, imSize(1), imSize(2));
+testLabels = zeros(numImagesMaxTest, 1);
+iImageTrain = 1;
+iImageTest = 1;
+for iFigure = 575:1000 % 1:nPersons
     disp(iFigure);
     currDir = fullfile(mainDir, figDirs(iFigure).name);
     images = dir(fullfile(currDir, '*.png'));
@@ -39,16 +49,28 @@ for iFigure = 1:nPersons
         im = shiftdim(im, 2); 
         
         if isTrain(iImage)
-            currFigTrain(end+1,:,:,:) = im;
+            train(iImageTrain,:,:,:) = im;
+            trainLabels(iImageTrain) = iFigure;
+            iImageTrain = iImageTrain + 1;
+            %currFigTrain(end+1,:,:,:) = im;
         else
-            currFigTest(end+1,:,:,:) = im;
+            test(iImageTest,:,:,:) = im;
+            testLabels(iImageTest) = iFigure;
+            iImageTest = iImageTest + 1;
+            %currFigTest(end+1,:,:,:) = im;
         end
     end
     
     % copy into global arrays
-    train = cat(1, train, currFigTrain);
-    trainLabels = cat(1, trainLabels, iFigure*ones(size(currFigTrain,1), 1));
-    test = cat(1, test, currFigTest);
-    testLabels = cat(1, testLabels, iFigure*ones(size(currFigTest,1), 1));
+    %train = cat(1, train, currFigTrain);
+    %trainLabels = cat(1, trainLabels, iFigure*ones(size(currFigTrain,1), 1));
+    %test = cat(1, test, currFigTest);
+    %testLabels = cat(1, testLabels, iFigure*ones(size(currFigTest,1), 1));
 end
-save('cfw_small.mat', 'train', 'trainLabels', 'test', 'testLabels');
+% cut unused cells
+train(iImageTrain:numImagesMaxTrain,:,:,:) = [];
+trainLabels(iImageTrain:numImagesMaxTrain) = [];
+test(iImageTest:numImagesMaxTest,:,:,:) = [];
+testLabels(iImageTest:numImagesMaxTest) = [];
+
+save(outputFilePath, 'train', 'trainLabels', 'test', 'testLabels', '-v7.3');

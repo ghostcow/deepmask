@@ -23,7 +23,7 @@ if not opt then
     cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:option('-plot', false, 'live plot')
     cmd:option('-learningRate', 0.01, 'learning rate at t=0')
-    cmd:option('-batchSize', 32, 'mini-batch size (1 = pure stochastic)')
+    cmd:option('-batchSize', 128, 'mini-batch size (1 = pure stochastic)')
     cmd:option('-weightDecay', 0, 'weight decay for SGD')
     cmd:option('-momentum', 0.9, 'momentum for SGD')
     cmd:text()
@@ -100,7 +100,7 @@ for t = 1,trainData:size(),opt.batchSize do
       -- we don't use the last samples
       break
     end
-    for i = t,math.min(t+opt.batchSize-1,trainData:size()) do
+    for i = t,(t+opt.batchSize-1) do
          -- NOTE: we suppport training on CUDA only
          inputs[{i-t+1}] = trainData.data[shuffle[i]]
          targets[{i-t+1}] = trainData.labels[shuffle[i]]
@@ -121,7 +121,6 @@ for t = 1,trainData:size(),opt.batchSize do
         -- estimate f
         local output = model:forward(inputs)
         numInputs = inputs:size()[1]
-        print(numInputs)
         local err = criterion:forward(output, targets)
         
         -- f is the average of all criterions
@@ -132,7 +131,9 @@ for t = 1,trainData:size(),opt.batchSize do
         model:backward(inputs, df_do)
         
         -- update confusion
-        -- confusion:add(output, targets)
+        for i=1,numInputs do
+          confusion:add(output[i], targets[i])
+        end
 
         -- normalize gradients and f(X)
         gradParameters:div(numInputs)
@@ -151,7 +152,9 @@ end
 
  -- print confusion matrix
  print(confusion)
-
+ local filename_confusion = paths.concat(opt.save, 'confusion_train')
+ torch.save(filename_confusion, confusion)
+ 
  -- update logger/plot
  trainLogger:add{['% mean class accuracy (train set)'] = confusion.totalValid * 100}
  if opt.plot then
@@ -166,6 +169,6 @@ end
  torch.save(filename, model)
 
  -- next epoch
- confusion:zero()
+ --confusion:zero()
  epoch = epoch + 1
 end

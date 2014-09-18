@@ -11,33 +11,35 @@ if not opt then
     cmd:text('data for Deepface torch7 model')
     cmd:text()
     cmd:text('Options:')
+    cmd:option('-size', 'small', 'how many samples do we load: small | full')
     cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
 
-data_file = '../data_set/cfw/cfw_small.mat'
-data = mattorch.load(data_file)
-trsize = data.train:size()[4]
-tesize = data.test:size()[4]
-
-numPerosns = 200
-
-trainData = {
-  -- the original matlab format is nImages x 3 x height x width (where height=width=152)
-  -- but it's loaded into torch like this : width x height x 3 x nImages
+if opt.size == 'small' then
+  numPersons = 200
+  data_file = '../data_set/cfw/cfw_small.mat'
+  data = mattorch.load(data_file)
+  trsize = data.train:size()[4]
+  tesize = data.test:size()[4]
+  trainData = {
+    -- the original matlab format is nImages x 3 x height x width (where height=width=152)
+    -- but it's loaded into torch like this : width x height x 3 x nImages
+    
+    data = data.train:transpose(1,4):transpose(2,3),
+    labels = data.trainLabels[1],
+    size = function() return trsize end
+  }
   
-  data = data.train:transpose(1,4):transpose(2,3),
-  labels = data.trainLabels[1],
-  size = function() return trsize end
-}
-
-testData = {
-  data = data.test:transpose(1,4):transpose(2,3),
-  labels = data.testLabels[1],
-  size = function() return tesize end
-}
-
+  testData = {
+    data = data.test:transpose(1,4):transpose(2,3),
+    labels = data.testLabels[1],
+    size = function() return tesize end
+  }
+elseif opt.size == 'full' then
+  print('not implemented yet')
+end
 -- free some memory...
 data = nil
 
