@@ -11,7 +11,7 @@ if not opt then
     cmd:text('data for Deepface torch7 model')
     cmd:text()
     cmd:text('Options:')
-    cmd:option('-visualize', true, 'visualize input data and weights during training')
+    cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:text()
     opt = cmd:parse(arg or {})
 end
