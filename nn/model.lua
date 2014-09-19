@@ -101,6 +101,7 @@ print(model)
 print '==> initalizing weights'
 for _, layerId in pairs(layersIds) do
     model:get(layerId).weight:normal(0, 0.01)
+    model:get(layerId).bias:fill(0.5)
 end
 
 
