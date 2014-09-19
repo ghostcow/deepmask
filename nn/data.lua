@@ -19,29 +19,27 @@ end
 
 if opt.size == 'small' then
   numPersons = 200
-  data_file = '../data_set/cfw/cfw_small.mat'
-  data = mattorch.load(data_file)
-  trsize = data.train:size()[4]
-  tesize = data.test:size()[4]
+  local data_file = '../data_set/cfw/cfw_small.mat'
+  local data_set = mattorch.load(data_file)
+  trsize = data_set.train:size()[4]
+  tesize = data_set.test:size()[4]
   trainData = {
     -- the original matlab format is nImages x 3 x height x width (where height=width=152)
     -- but it's loaded into torch like this : width x height x 3 x nImages
     
-    data = data.train:transpose(1,4):transpose(2,3),
-    labels = data.trainLabels[1],
+    data = data_set.train:transpose(1,4):transpose(2,3),
+    labels = data_set.trainLabels[1],
     size = function() return trsize end
   }
   
   testData = {
-    data = data.test:transpose(1,4):transpose(2,3),
-    labels = data.testLabels[1],
+    data = data_set.test:transpose(1,4):transpose(2,3),
+    labels = data_set.testLabels[1],
     size = function() return tesize end
   }
 elseif opt.size == 'full' then
   print('not implemented yet')
 end
--- free some memory...
-data = nil
 
 ------preprocessing - ?
 
