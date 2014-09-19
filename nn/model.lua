@@ -71,7 +71,7 @@ model:add(ccn2.SpatialConvolutionLocal(numMaps[3], numMaps[4], outputMapDim, fil
 model:add(nn.ReLU())
 
 -- L6 layer
-inputDim = 25 -- TODO: some formula with outputMapDim & L5_stride
+inputDim = 25 -- inputDim = (55 - 7) / 2 + 1
 model:add(ccn2.SpatialConvolutionLocal(numMaps[4], numMaps[5], inputDim, filtersSize[5])) -- 10
 model:add(nn.ReLU())
 outputDim = inputDim - filtersSize[5] + 1
@@ -98,7 +98,6 @@ if opt.visualize then
     print '==> visualizing filters'
     gfx.image(model:get(2).weight, {zoom=2, legend='C1'})
     gfx.image(model:get(5).weight, {zoom=2, legend='C3'})
-    -- NOTE: gfx fails to visualize local layers, this bug is related to the filter size
     gfx.image(model:get(7).weight, {zoom=2, legend='L4'})
     gfx.image(model:get(9).weight, {zoom=2, legend='L5'})
     gfx.image(model:get(11).weight, {zoom=2, legend='L6'})
