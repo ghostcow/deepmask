@@ -36,6 +36,9 @@ if not opt then
     opt = cmd:parse(arg or {})
 end
 
+----------------------------------------------------------------------
+print '==> building model'
+
 model = nn.Sequential()
 
 -- convert from Torch batchSizeX3XheightXwidth format to ccn2 format 3XheightXwidthXbatchSize
@@ -93,6 +96,13 @@ model:add(nn.Linear(4096, numPersons)) -- 17
 
 print '==> here is the model:'
 print(model)
+
+----------------------------------------------------------------------
+print '==> initalizing weights'
+for _, layerId in ipairs({2,5,7,9,11,15,18}) do
+    model:get(layerId).weight:normal(0, 0.01)
+end
+
 
 if opt.visualize then
     print '==> visualizing filters'

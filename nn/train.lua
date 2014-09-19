@@ -71,7 +71,6 @@ optimState = {
     learningRateDecay = 1e-7 -- TODO: "changed manually" at deepface training
 }
 
--- TODO: initalize weights the same way as deepface
 ----------------------------------------------------------------------
 print '==> defining training procedure'
 
