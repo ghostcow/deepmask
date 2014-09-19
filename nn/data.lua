@@ -46,8 +46,8 @@ end
 ------visualizing data---------------------------
 if opt.visualize then
   print '==> visualizing data'
-  first100Samples_train = trainData.data[{ {1,100} }]
+  local first100Samples_train = trainData.data[{ {1,100} }]
   gfx.image(first100Samples_train, {legend='train - 100 samples'})
-  first100Samples_test = testData.data[{ {1,100} }]
+  local first100Samples_test = testData.data[{ {1,100} }]
   gfx.image(first100Samples_test, {legend='test - 100 samples'})
 end
