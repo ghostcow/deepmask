@@ -16,8 +16,10 @@ imagedim = 152
 filtersSize = {11, 9, 9, 7, 5}
 maxPoolingStride = 2
 L5_stride = 2
--- number of output maps for layers C1 
+-- number of output maps for layers C1,C3,L4,L5,L6
 numMaps = {32, 16, 16, 16, 16}
+-- layers id
+layersIds = {C1=2,C3=5,L4=7,L5=9,L6=11,F7=15,F8=18}
 
 -- TODO: ask about cuda fully connected layer
 
@@ -99,18 +101,14 @@ print(model)
 
 ----------------------------------------------------------------------
 print '==> initalizing weights'
-for _, layerId in ipairs({2,5,7,9,11,15,18}) do
+for _, layerId in pairs(layersIds) do
     model:get(layerId).weight:normal(0, 0.01)
 end
 
 
 if opt.visualize then
     print '==> visualizing filters'
-    gfx.image(model:get(2).weight, {zoom=2, legend='C1'})
-    gfx.image(model:get(5).weight, {zoom=2, legend='C3'})
-    gfx.image(model:get(7).weight, {zoom=2, legend='L4'})
-    gfx.image(model:get(9).weight, {zoom=2, legend='L5'})
-    gfx.image(model:get(11).weight, {zoom=2, legend='L6'})
-    gfx.image(model:get(15).weight, {zoom=2, legend='F7'})
-    gfx.image(model:get(18).weight, {zoom=2, legend='F8'})
+    for layerName, layerId in pairs(layersIds) do
+        gfx.image(model:get(layerId).weight, {zoom=2, legend=layerName})
+    end
 end
