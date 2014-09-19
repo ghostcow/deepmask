@@ -101,10 +101,10 @@ for t = 1,trainData:size(),opt.batchSize do
       break
     end
     for i = t,(t+opt.batchSize-1) do
-         -- NOTE: we suppport training on CUDA only
          inputs[{i-t+1}] = trainData.data[shuffle[i]]
          targets[{i-t+1}] = trainData.labels[shuffle[i]]
     end
+    -- NOTE: we suppport training on CUDA only
     inputs = inputs:cuda()
 
     -- create closure to evaluate f(X) and df/dX
