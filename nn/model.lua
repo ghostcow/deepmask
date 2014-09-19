@@ -21,8 +21,6 @@ numMaps = {32, 16, 16, 16, 16}
 -- layers id
 layersIds = {C1=2,C3=5,L4=7,L5=9,L6=11,F7=15,F8=18}
 
--- TODO: ask about cuda fully connected layer
-
 ----------------------------------------------------------------------
 -- use -visualize to show network
 -- parse command line arguments
