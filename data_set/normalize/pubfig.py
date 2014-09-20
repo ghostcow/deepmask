@@ -20,6 +20,11 @@ def generate_image_to_identity_dict(info_file_path):
 
 
 def main(src_dir, dst_dir):
+    dst_dir = os.path.join(dst_dir, 'SUFR')
+
+    if not os.path.exists(dst_dir):
+        os.mkdir(dst_dir)
+
     for image_dir in [DEV_IMAGE_DIR_PATH, EVAL_IMAGE_DIR_PATH]:
         info_file_path = os.path.join(src_dir, INFO_FILE_PATH % image_dir)
         image_dir = os.path.join(src_dir, image_dir)

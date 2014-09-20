@@ -19,9 +19,13 @@ def generate_image_to_identity_dict(info_file_path):
 
 
 def main(src_dir, dst_dir):
+    dst_dir = os.path.join(dst_dir, 'SUFR')
     image_dir = os.path.join(src_dir, IMAGE_DIR_PATH)
     info_file_path = os.path.join(src_dir, INFO_FILE_PATH)
     image_to_ident = generate_image_to_identity_dict(info_file_path)
+
+    if not os.path.exists(dst_dir):
+        os.mkdir(dst_dir)
 
     for image_file in glob.glob(os.path.join(image_dir, '*.jpg')):
         image_id = int(os.path.splitext(os.path.basename(image_file))[0])

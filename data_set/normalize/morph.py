@@ -5,7 +5,11 @@ import shutil
 
 
 def main(src_dir, dst_dir):
+    dst_dir = os.path.join(dst_dir, 'morph')
     image_dir = os.path.join(src_dir, 'Album2')
+
+    if not os.path.exists(dst_dir):
+        os.mkdir(dst_dir)
 
     for image_file_path in glob.glob(os.path.join(image_dir, '*.JPG')):
         image_name = os.path.basename(image_file_path)
