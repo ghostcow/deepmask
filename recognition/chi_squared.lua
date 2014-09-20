@@ -69,6 +69,6 @@ function predictChiSquared(data_set)
         chiSquaredDiffs[i] = chiSquaredDiff(data_set[i][1], data_set[i][2])
     end
 
-    local train_data = tensorToSvmFormat(chiSquaredDiffs, labels)
-    return libsvm.train(train_data, LIBSVM_TRAIN_OPTIONS)
+    local predict_data = tensorToSvmFormat(chiSquaredDiffs, labels)
+    return libsvm.train(predict_data, LIBSVM_TRAIN_OPTIONS)
 end
