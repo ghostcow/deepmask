@@ -23,6 +23,7 @@ if not opt then
     cmd:option('-visualize', false, 'visualize input data and weights during training')
     cmd:option('-plot', false, 'live plot')
     cmd:option('-learningRate', 0.01, 'learning rate at t=0')
+    cmd:option('-learningRateDecay', 1e-7, 'learning rate decay')
     cmd:option('-batchSize', 128, 'mini-batch size (1 = pure stochastic)')
     cmd:option('-weightDecay', 0, 'weight decay for SGD')
     cmd:option('-momentum', 0.9, 'momentum for SGD')
@@ -40,12 +41,6 @@ criterion:cuda()
 
 ----------------------------------------------------------------------
 print '==> defining some tools'
-
--- classes - classes are defined by numPersons
-classes = {}
-for i=1,numPersons do
-  table.insert(classes, tostring(i))
-end
 -- This matrix records the current confusion across classes
 confusion = optim.ConfusionMatrix(classes)
 
@@ -68,7 +63,7 @@ optimState = {
     learningRate = opt.learningRate,
     weightDecay = opt.weightDecay,
     momentum = opt.momentum,
-    learningRateDecay = 1e-7 -- TODO: "changed manually" at deepface training
+    learningRateDecay = opt.learningRateDecay -- TODO: "changed manually" at deepface training
 }
 
 ----------------------------------------------------------------------
