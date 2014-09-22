@@ -168,6 +168,6 @@ end
  torch.save(filename, model)
 
  -- next epoch
- --confusion:zero()
+ confusion:zero()
  epoch = epoch + 1
 end

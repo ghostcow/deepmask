@@ -74,7 +74,7 @@ model:add(ccn2.SpatialConvolutionLocal(numMaps[3], numMaps[4], outputMapDim, fil
 model:add(nn.ReLU())
 
 -- L6 layer
-inputDim = 25 -- inputDim = (55 - 7) / 2 + 1
+inputDim = (outputMapDim - filtersSize[4])/L5_stride + 1
 model:add(ccn2.SpatialConvolutionLocal(numMaps[4], numMaps[5], inputDim, filtersSize[5])) -- 10
 model:add(nn.ReLU())
 outputDim = inputDim - filtersSize[5] + 1
