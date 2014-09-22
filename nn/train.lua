@@ -52,7 +52,7 @@ testLogger = optim.Logger(paths.concat(opt.save, 'test.log'))
 -- this extracts and flattens all the trainable parameters of the mode
 -- into a 1-dim vector
 if model then
- parameters,gradParameters = model:getParameters()
+   parameters,gradParameters = model:getParameters()
 end
 
 ----------------------------------------------------------------------
@@ -88,7 +88,7 @@ for t = 1,trainData:size(),opt.batchSize do
     xlua.progress(t, trainData:size())
 
     -- create mini batch
-    local inputs = torch.Tensor(opt.batchSize, 3, imagedim, imagedim)
+    local inputs = torch.Tensor(opt.batchSize, 3, imageDim, imageDim)
     local targets = torch.Tensor(opt.batchSize)
     if ((t+opt.batchSize-1) > trainData:size()) then
       -- we don't use the last samples

@@ -12,7 +12,7 @@ torch.manualSeed(opt.seed)
 print '==> executing all'
 
 dofile 'data.lua'
-dofile 'model.lua'
+dofile 'model2.lua'
 dofile 'train.lua'
 dofile 'test.lua'
 
