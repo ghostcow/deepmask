@@ -1,35 +1,28 @@
-require 'mattorch'
 require 'gfx.js'
+require 'options'
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
 -- parse command line arguments
 if not opt then
     print '==> processing options'
-    cmd = torch.CmdLine()
-    cmd:text()
-    cmd:text('data for Deepface torch7 model')
-    cmd:text()
-    cmd:text('Options:')
-    cmd:option('-size', 'small', 'how many samples do we load: small | full')
-    cmd:option('-visualize', false, 'visualize input data and weights during training')
-    cmd:text()
-    opt = cmd:parse(arg or {})
+    opt = getOptions()
 end
 
 local data_file
 
 if opt.size == 'small' then
   print '==> loading small dataset'
-  data_file = '../data_set/cfw/cfw_small.mat'
+  data_file = '../data_set/cfw/cfw_small'
   numPersons = 200
-
 elseif opt.size == 'full' then
   print '==> loading full dataset'
   -- this dataset contain only persons with 30-80 training samples 
   -- beacause of limited memory the full 'cfw_flat.mat' cannot be loaded
-  data_file = '../data_set/cfw/cfw_flat_1_574.mat'
+  data_file = '../data_set/cfw/cfw_flat_1_574'
   numPersons = 240
+else
+    error('unsupprted size option : '..opt.size)
 end
 
 -- classes - define classes array (used later for computing confusion matrix)
@@ -38,7 +31,18 @@ for i=1,numPersons do
   table.insert(classes, tostring(i))
 end
 
-local data_set = mattorch.load(data_file)
+local data_set
+if (opt.dataFormat == 'mat') then
+    require 'mattorch'
+    -- mattorch is installed --> look for mat file
+    data_set = mattorch.load(data_file..'.mat')
+elseif (opt.dataFormat == 't7') then
+    -- mattorch is not installed --> look for torch file
+    data_set = torch.load(data_file..'.t7')
+else
+    error('unsupprted dataFormat option : '..opt.dataFormat)
+end
+
 trsize = data_set.train:size()[4]
 tesize = data_set.test:size()[4]
 trainData = {

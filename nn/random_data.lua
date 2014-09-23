@@ -1,18 +1,12 @@
 require 'gfx.js'
+require 'options'
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
 -- parse command line arguments
 if not opt then
     print '==> processing options'
-    cmd = torch.CmdLine()
-    cmd:text()
-    cmd:text('data for Deepface torch7 model')
-    cmd:text()
-    cmd:text('Options:')
-    cmd:option('-visualize', false, 'visualize input data and weights during training')
-    cmd:text()
-    opt = cmd:parse(arg or {})
+    opt = getOptions()
 end
 
 labels = torch.Tensor(1,1000)

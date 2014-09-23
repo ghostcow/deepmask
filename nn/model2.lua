@@ -10,6 +10,7 @@ require 'ccn2'
 require 'torch'
 require 'image'
 require 'gfx.js'
+require 'options'
 
 imageDim = 152
 -- filter sizes for layers C1,C3,L4,L5,L6
@@ -27,14 +28,7 @@ layersIds = {C1=2,C3=5,L4=7,F7=11,F8=14}
 -- parse command line arguments
 if not opt then
     print '==> processing options'
-    cmd = torch.CmdLine()
-    cmd:text()
-    cmd:text('Deepface torch7 model')
-    cmd:text()
-    cmd:text('Options:')
-    cmd:option('-visualize', false, 'visualize input data and weights during training')
-    cmd:text()
-    opt = cmd:parse(arg or {})
+    opt = getOptions()
 end
 
 ----------------------------------------------------------------------
