@@ -8,13 +8,16 @@ else
     detpath=[imgpath '.vj'];
 end
 
-imwrite(I,pgmpath);
+if ~exist(detpath, 'file')
+    % run this only if the detections file doesn;t exist from previous run
+    imwrite(I,pgmpath);
 
-root=[fileparts(which(mfilename)) '/OpenCV_ViolaJones'];
-system(sprintf('%s/Release/OpenCV_ViolaJones %s/haarcascade_frontalface_alt.xml %s %s',root,root,pgmpath,detpath));
+    root=fullfile(fileparts(which(mfilename)), 'OpenCV_ViolaJones');
+    system(sprintf('%s/Release/OpenCV_ViolaJones %s/haarcascade_frontalface_alt.xml "%s" "%s"',root,root,pgmpath,detpath));
+    delete(pgmpath);
+end
 
 DETS=readfacedets(detpath);
-delete(pgmpath);
 if nargin<2
     delete(detpath);
 end

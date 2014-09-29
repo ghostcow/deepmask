@@ -1,4 +1,4 @@
-function faceImg = alignimg(imPath, landmarks, alignparams)
+function faceImg = alignimg(img, landmarks, alignparams)
 %ALIGN_IMG Summary of this function goes here
 %   Detailed explanation goes here
 
@@ -21,9 +21,9 @@ function faceImg = alignimg(imPath, landmarks, alignparams)
     dy = bottom - top;
 
     % set crop region in the canonical coordinate system
-    horRatio = 1.955;
-    topRatio = 1.8;
-    bottomRatio = 1.2;
+    horRatio = alignparams.horRatio; 
+    topRatio = alignparams.topRatio;
+    bottomRatio = alignparams.bottomRatio; 
 
     x0 = cx - dx * horRatio;
     x1 = cx + dx * horRatio;
@@ -38,11 +38,7 @@ function faceImg = alignimg(imPath, landmarks, alignparams)
     x1 = x1 * scale;
     y0 = y0 * scale;
     y1 = y1 * scale;
-    
-    % load an image
-    img = imread(imPath);
-    %img = rgb2gray(im2single(img));
-    
+
     % compute alignment transform
     tform = cp2tform(landmarks', basePts', 'similarity');
     
