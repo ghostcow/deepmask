@@ -2,6 +2,11 @@ function [detections, landmarks, aligned_imgs] = align_face(opts, imgPath)
 %ALIGN_FACE Summary of this function goes here
 %   Detailed explanation goes here
     [I, map] = imread(imgPath);
+    X = size(I);
+    if (length(X) > 3)
+        % multi-frame image
+        I = I(:,:,:,1);
+    end
     if ~isempty(map)
         I = ind2rgb(I, map);
     end

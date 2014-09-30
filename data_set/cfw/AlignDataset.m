@@ -45,6 +45,7 @@ for iFigure = 1:nPersons
             [detection, landmarks, aligned_imgs] = align_face(opts, imPath);
         catch me
             fprintf('%s - Error - %s\n', imPath, me.message);
+            continue;
         end
         outputDir = fullfile(alignedImagesDir, figDirs(iFigure).name);
         if ~exist(outputDir, 'dir')
@@ -53,8 +54,8 @@ for iFigure = 1:nPersons
         
         relImageName = fullfile(figDirs(iFigure).name, [images(iImage).name(1:end-3) 'jpg']);
         nFaces = length(aligned_imgs);
+        iCorrectFace = 1;
         if (nFaces == 0)
-            fprintf('%s - no faces found\n', imPath);
             iCorrectFace = 0;
         else %if (nFaces > 1)
             % look for the correct face
@@ -63,32 +64,35 @@ for iFigure = 1:nPersons
             faceInfo = imfinfo(filteredFacePath);
             face = struct('height', faceInfo.Height,...
                 'width', faceInfo.Width);
-            faces = gtFaces(relImageName);
-            iCorrespondFace = 1;
-            for iFace = 2:length(faces)
-               if ((faces(iFace).height == face.height) && ...
-                   (faces(iFace).width == face.width))
-                    iCorrespondFace = iFace;
-               end
-            end
-            
-            % choose the appropriate opencv detection
-            minDist = 50; % 15 is the biggest distance allowed
-            iCorrectFace = 0;
-            for iFace = 1:nFaces
-                dist = norm(detection(1:2, iFace) - ...
-                    faces(iCorrespondFace).center');
-                if (dist < minDist)
-                    minDist = dist;
-                    iCorrectFace = iFace;
+            if gtFaces.isKey(relImageName)
+
+                faces = gtFaces(relImageName);
+                iCorrespondFace = 1;
+                for iFace = 2:length(faces)
+                   if ((faces(iFace).height == face.height) && ...
+                       (faces(iFace).width == face.width))
+                        iCorrespondFace = iFace;
+                   end
                 end
+
+                % choose the appropriate opencv detection
+                minDist = 50; % 15 is the biggest distance allowed
+                iCorrectFace = 0;
+                for iFace = 1:nFaces
+                    dist = norm(detection(1:2, iFace) - ...
+                        faces(iCorrespondFace).center');
+                    if (dist < minDist)
+                        minDist = dist;
+                        iCorrectFace = iFace;
+                    end
+                end
+
+    %             if (minDist == 50)
+    %                 figure; imshow(aligned_imgs{1}); 
+    %                 title(sprintf('%s - %f', images(iImage).name, dist));
+    %                 disp(images(iImage).name);
+    %             end
             end
-            
-%             if (minDist == 50)
-%                 figure; imshow(aligned_imgs{1}); 
-%                 title(sprintf('%s - %f', images(iImage).name, dist));
-%                 disp(images(iImage).name);
-%             end
         end
         if (iCorrectFace ~= 0)
             alignedImagePath = fullfile(outputDir, ...
@@ -97,6 +101,8 @@ for iFigure = 1:nPersons
             fprintf(fid, '%s %d %d %d %d\n', relImageName, ...
                 detection(1, iCorrectFace), detection(2, iCorrectFace), ...
                 detection(3, iCorrectFace), detection(4, iCorrectFace));
+        else
+            fprintf('%s - no faces found\n', imPath);
         end
     end
 end
