@@ -17,10 +17,9 @@ if opt.size == 'small' then
   numPersons = 200
 elseif opt.size == 'full' then
   print '==> loading full dataset'
-  -- this dataset contain only persons with 30-80 training samples 
-  -- beacause of limited memory the full 'cfw_flat.mat' cannot be loaded
-  data_file = '../data_set/cfw/cfw_flat_1_574'
-  numPersons = 240
+  -- this dataset contain only persons with 30-80 training samples
+  data_file = '../data_files/aligned/cfw/cfw_flat'
+  numPersons = 558
 else
     error('unsupprted size option : '..opt.size)
 end
@@ -34,10 +33,10 @@ end
 local data_set
 if (opt.dataFormat == 'mat') then
     require 'mattorch'
-    -- mattorch is installed --> look for mat file
+    -- look for mat file
     data_set = mattorch.load(data_file..'.mat')
 elseif (opt.dataFormat == 't7') then
-    -- mattorch is not installed --> look for torch file
+    -- look for torch file
     data_set = torch.load(data_file..'.t7')
 else
     error('unsupprted dataFormat option : '..opt.dataFormat)
