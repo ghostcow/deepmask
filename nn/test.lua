@@ -24,29 +24,35 @@ function test()
 
    -- test over test data
    print('==> testing on test set:')
-   for t = 1,testData:size(),opt.batchSize do
-      -- disp progress
-      xlua.progress(t, testData:size())
-      if ((t+opt.batchSize-1) > testData:size()) then
-        -- we don't use the last samples
-        break
-      end
-      
-      -- get new sample
-      local inputs = testData.data[{{t,t+opt.batchSize-1}}]
-      inputs = inputs:cuda()
-      local targets = testData.labels[{{t,t+opt.batchSize-1}}]
+   local totalSize = 0
+   local testDataChunk
+   for iChunk = 1,testData.numChunks do
+   	testDataChunk = testData.getChunk(iChunk)
+  	totalSize = totalSize + testDataChunk:size()
+	for t = 1,testDataChunk:size(),opt.batchSize do
+		-- disp progress
+		xlua.progress(t, testDataChunk:size())
+		if ((t+opt.batchSize-1) > testDataChunk:size()) then
+			-- we don't use the last samples
+			break
+		end
 
-      -- test sample
-      local outputs = model:forward(inputs)
-      for i=1,numInputs do
-        confusion:add(outputs[i], targets[i])
-      end     
+		-- get new sample
+		local inputs = testDataChunk.data[{{t,t+opt.batchSize-1}}]
+		inputs = inputs:cuda()
+		local targets = testDataChunk.labels[{{t,t+opt.batchSize-1}}]
+
+		-- test sample
+		local outputs = model:forward(inputs)
+		for i=1,numInputs do
+			confusion:add(outputs[i], targets[i])
+		end     
+	end
    end
 
    -- timing
    time = sys.clock() - time
-   time = time / testData:size()
+   time = time / totalSize
    print("\n==> time to test 1 sample = " .. (time*1000) .. 'ms')
    -- testLogger:add{['time to learn 1 sample'] = time*1000}
 

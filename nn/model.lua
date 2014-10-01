@@ -9,7 +9,6 @@ require 'cunn'
 require 'ccn2'
 require 'torch'
 require 'image'
-require 'gfx.js'
 require 'options'
 
 imageDim = 152
@@ -125,6 +124,7 @@ end
 
 
 if opt.visualize then
+    require 'gfx.js'
     print '==> visualizing filters'
     for layerName, layerId in pairs(layersIds) do
         weights = model:get(layerId).weight

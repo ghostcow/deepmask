@@ -1,4 +1,3 @@
-require 'gfx.js'
 require 'options'
 
 ----------------------------------------------------------------------
@@ -44,7 +43,7 @@ end
 
 trsize = data_set.train:size()[4]
 tesize = data_set.test:size()[4]
-trainData = {
+trainDataInner = {
 	-- the original matlab format is nImages x 3 x height x width 
 	-- (where height=width=152)
 	-- but it's loaded into torch like this : width x height x 3 x nImages
@@ -54,28 +53,39 @@ trainData = {
 	size = function() return trsize end
 	}
 
-testData = {
+testDataInner = {
 	data = data_set.test:transpose(1,4):transpose(2,3),
 	labels = data_set.testLabels[1],
 	size = function() return tesize end
+}
+
+-- convert to our general dataset format
+trainData = {
+	numChunks = 1,
+	getChunk = function(iChunk) return trainDataInner end
+}
+testData = {
+	numChunks = 1,
+	getChunk = function(iChunk) return testDataInner end
 }
 
 ------preprocessing - ?
 
 ------visualizing data---------------------------
 if opt.visualize then
+  require 'gfx.js'
   print '==> visualizing data'
   if (require 'gnuplot') then
 	  gnuplot.figure(1)
-	  gnuplot.hist(trainData.labels, trainData.labels:max())
+	  gnuplot.hist(trainDataInner.labels, trainDataInner.labels:max())
 	  gnuplot.title('#samples per person - training')
 	  gnuplot.figure(2)
-	  gnuplot.hist(testData.labels, testData.labels:max())
+	  gnuplot.hist(testDataInner.labels, testDataInner.labels:max())
 	  gnuplot.title('#samples per person - test')
   end
 
-  local first100Samples_train = trainData.data[{ {1,100} }]
+  local first100Samples_train = trainDataInner.data[{ {1,100} }]
   gfx.image(first100Samples_train, {legend='train - 100 samples'})
-  local first100Samples_test = testData.data[{ {1,100} }]
+  local first100Samples_test = testDataInner.data[{ {1,100} }]
   gfx.image(first100Samples_test, {legend='test - 100 samples'})
 end
