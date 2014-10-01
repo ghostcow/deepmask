@@ -17,7 +17,7 @@ NOTE: in case more than one face is found the additional faces are saved as "[im
 
 * MEDS - detection+alignment. not filtered yet.
 * morph - detection+alignment. not filtered yet.
-* SUFR - detection+alignment. not filtered yet.
+* SUFR - detection+alignment. not filtered yet. (might have intersections with CFW/LFW)
 
-* PubFig - not processed yet.
+* PubFig - not processed yet. (might have intersections with CFW/LFW)
 * Adience - not processed yet (images should be arranged into different folders per person)

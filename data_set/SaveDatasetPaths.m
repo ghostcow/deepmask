@@ -1,4 +1,5 @@
-% This script save the dataset image paths into csv file
+% This script save the dataset image paths into csv file, where each line
+% format is : [image path],[label]
 
 %% change paths here
 mainDir = '/media/data/datasets/CFW/filtered_aligned';
@@ -21,6 +22,9 @@ figDirs = figDirs(3:end);
 nPersons = length(figDirs);
 fidTrain = fopen(outputFilePathTrain, 'w');
 fidTest = fopen(outputFilePathTest, 'w');
+
+% contiguos labeling of the persons chosen for the dataset
+iLabel = 1;
 for iPerson = 1:nPersons
     fprintf('%d - %s\n', iPerson, figDirs(iPerson).name);
     imagesDir = fullfile(mainDir, figDirs(iPerson).name);
@@ -54,11 +58,12 @@ for iPerson = 1:nPersons
         for iImage = 1:nImagesToTake
             imagePath = fullfile(imagesDir, images(imageIndices(iImage)).name);
             if (iImage <= nTrainingSamples)
-                fprintf(fidTrain, '%s,%d\n', imagePath, iPerson);
+                fprintf(fidTrain, '%s,%d\n', imagePath, iLabel);
             else
-                fprintf(fidTest, '%s,%d\n', imagePath, iPerson);
+                fprintf(fidTest, '%s,%d\n', imagePath, iLabel);
             end
         end
+        iLabel = iLabel + 1;
     end
 end  
 fclose(fidTrain);

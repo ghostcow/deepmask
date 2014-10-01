@@ -19,39 +19,54 @@ if not opt then
 end
 
 ----------------------------------------------------------------------
-print '==> defining cost function to nll, and changing model to CUDA'
+-- defining output paths
+os.execute('mkdir -p ' .. opt.save)
+local state_file_path = paths.concat(opt.save, 'model.net')
+local train_log_path = paths.concat(opt.save, 'train.log')
+local testn_log_path = paths.concat(opt.save, 'test.log')
 
-model:add(nn.LogSoftMax())
-criterion = nn.ClassNLLCriterion()
-model:cuda()
-criterion:cuda()
+-- Log results to files
+trainLogger = optim.Logger(train_log_path)
+testLogger = optim.Logger(testn_log_path)
+----------------------------------------------------------------------
+if not opt.loadState then
+    print '==> changing model to CUDA'
+    model:add(nn.LogSoftMax())
+    model:cuda()
+
+    print '==> configuring optimizer - SGD'
+    -- TODO: need to figure out all of this parameters - see training in deepface article
+    optimMethod = optim.sgd
+    optimState = {
+        learningRate = opt.learningRate,
+        weightDecay = opt.weightDecay,
+        momentum = opt.momentum,
+        learningRateDecay = opt.learningRateDecay -- TODO: "changed manually" at deepface training
+    }
+
+    print '==> defining cost function to NLL'
+    criterion = nn.ClassNLLCriterion()
+    criterion:cuda()
+else
+    print '==> loadind pre-trained net & optimization parameters'
+    local x = torch.load(state_file_path)
+    model = x.model
+    optimState = x.optimState
+    optimMethod = x.optimMethod
+    criterion = x.criterion
+
+    -- TODO : print loaded state details here
+end
 
 ----------------------------------------------------------------------
 print '==> defining some tools'
 -- This matrix records the current confusion across classes
 confusion = optim.ConfusionMatrix(classes)
 
--- Log results to files
-trainLogger = optim.Logger(paths.concat(opt.save, 'train.log'))
-testLogger = optim.Logger(paths.concat(opt.save, 'test.log'))
-
 -- Retrieve parameters and gradients:
 -- this extracts and flattens all the trainable parameters of the mode
 -- into a 1-dim vector
-if model then
-   parameters,gradParameters = model:getParameters()
-end
-
-----------------------------------------------------------------------
-print '==> configuring optimizer - SGD'
--- TODO: need to figure out all of this parameters - see training in deepface article
-optimMethod = optim.sgd
-optimState = {
-    learningRate = opt.learningRate,
-    weightDecay = opt.weightDecay,
-    momentum = opt.momentum,
-    learningRateDecay = opt.learningRateDecay -- TODO: "changed manually" at deepface training
-}
+parameters,gradParameters = model:getParameters()
 
 ----------------------------------------------------------------------
 print '==> defining training procedure'
@@ -144,10 +159,8 @@ end
  end
 
  -- save/log current net
- local filename = paths.concat(opt.save, 'model.net')
- os.execute('mkdir -p ' .. sys.dirname(filename))
- print('==> saving model to '..filename)
- torch.save(filename, model)
+ print('==> saving model & state to '..net_file_path)
+ torch.save(state_file_path, {model=model, optimState=optimState, optimMethod=optimMethod, criterion = criterion})
 
  -- next epoch
  confusion:zero()

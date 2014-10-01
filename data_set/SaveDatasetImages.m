@@ -1,8 +1,8 @@
-% This script read image paths from files and generate mat files containing
-% the images
+% This script read image paths from csv files and generate mat files containing
+% the images (randomized)
 
 % 
-maxImagesPerFile = 18000;
+maxImagesPerFile = 40000; %18000;
 batchSize = 128;
 imSize = [152 152];
 
@@ -18,13 +18,14 @@ inputFilePathTest = [inputFilePath '_test.txt'];
 setTypes = {'train', 'test'};
 inputFilePaths = {inputFilePathTrain, inputFilePathTest};
 
-for iSet = 2 %1:2
+for iSet = 1:2
     setType = setTypes{iSet};
     fid = fopen(inputFilePaths{iSet});
     C = textscan(fid, '%s %d','delimiter', ',');
     fclose(fid);
     nImages = length(C{1});
-
+    randIndices = randperm(nImages);
+    
     nFiles = ceil(nImages/maxImagesPerFile);
     iStart = 1;
     for iFile = 1:nFiles
@@ -39,8 +40,8 @@ for iSet = 2 %1:2
         labels = uint16(zeros(chunkSize, 1));
         jImage = 1;
         for iImage = iStart:iEnd
-            imagePath = C{1}{iImage};
-            imageLabel = C{2}(iImage);
+            imagePath = C{1}{randIndices(iImage)};
+            imageLabel = C{2}(randIndices(iImage));
 
             [im, map] = imread(imagePath);
             if ~isempty(map)

@@ -18,8 +18,8 @@ if opt.size == 'small' then
 elseif opt.size == 'full' then
   print '==> loading full dataset'
   -- this dataset contain only persons with 30-80 training samples
-  data_file = '../data_files/aligned/cfw/cfw_flat'
-  numPersons = 558
+  data_file = '../data_files/aligned/cfw_flat'
+  numPersons = 559
 else
     error('unsupprted size option : '..opt.size)
 end
