@@ -23,11 +23,11 @@ end
 os.execute('mkdir -p ' .. opt.save)
 local state_file_path = paths.concat(opt.save, 'model.net')
 local train_log_path = paths.concat(opt.save, 'train.log')
-local testn_log_path = paths.concat(opt.save, 'test.log')
+local test_log_path = paths.concat(opt.save, 'test.log')
 
 -- Log results to files
 trainLogger = optim.Logger(train_log_path)
-testLogger = optim.Logger(testn_log_path)
+testLogger = optim.Logger(test_log_path)
 ----------------------------------------------------------------------
 if not opt.loadState then
     print '==> changing model to CUDA'
@@ -159,7 +159,7 @@ end
  end
 
  -- save/log current net
- print('==> saving model & state to '..net_file_path)
+ print('==> saving model & state to '..state_file_path)
  torch.save(state_file_path, {model=model, optimState=optimState, optimMethod=optimMethod, criterion = criterion})
 
  -- next epoch
