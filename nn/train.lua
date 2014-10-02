@@ -88,71 +88,76 @@ epoch = epoch or 1
 -- local vars
 local time = sys.clock()
 
--- shuffle at each epoch
-shuffle = torch.randperm(trsize)
-
 -- do one epoch
 print('==> doing epoch on training data:')
 print("==> online epoch # " .. epoch .. ' [batchSize = ' .. opt.batchSize .. ']')
-for t = 1,trainData:size(),opt.batchSize do
-    -- disp progress
-    xlua.progress(t, trainData:size())
+local totalSize = 0
+local trainDataChunk
+for iChunk = 1,trainData.numChunks do
+	trainDataChunk = trainData.getChunk(iChunk)
+	local totalSize = totalSize + trainDataChunk:size()
+	-- shuffle at each epoch
+	shuffle = torch.randperm(trainDataChunk:size())
+	for t = 1,trainDataChunk:size(),opt.batchSize do
+	    -- disp progress
+	    xlua.progress(t, trainDataChunk:size())
 
-    -- create mini batch
-    local inputs = torch.Tensor(opt.batchSize, 3, imageDim, imageDim)
-    local targets = torch.Tensor(opt.batchSize)
-    if ((t+opt.batchSize-1) > trainData:size()) then
-      -- we don't use the last samples
-      break
-    end
-    for i = t,(t+opt.batchSize-1) do
-         inputs[{i-t+1}] = trainData.data[shuffle[i]]
-         targets[{i-t+1}] = trainData.labels[shuffle[i]]
-    end
-    -- NOTE: we suppport training on CUDA only
-    inputs = inputs:cuda()
+	    -- create mini batch
+	    local inputs = torch.Tensor(opt.batchSize, 3, imageDim, imageDim)
+	    local targets = torch.Tensor(opt.batchSize)
+	    if ((t+opt.batchSize-1) > trainDataChunk:size()) then
+	      -- we don't use the last samples
+	      break
+	    end
+	    for i = t,(t+opt.batchSize-1) do
+		 inputs[{i-t+1}] = trainDataChunk.data[shuffle[i]]
+		 targets[{i-t+1}] = trainDataChunk.labels[shuffle[i]]
+	    end
+	    -- NOTE: we suppport training on CUDA only
+	    inputs = inputs:cuda()
 
-    -- create closure to evaluate f(X) and df/dX
-    local feval = function(x)
-        -- get new parameters
-        if x ~= parameters then
-         parameters:copy(x)
-        end
+	    -- create closure to evaluate f(X) and df/dX
+	    local feval = function(x)
+		-- get new parameters
+		if x ~= parameters then
+		 parameters:copy(x)
+		end
 
-        -- reset gradients
-        gradParameters:zero()
+		-- reset gradients
+		gradParameters:zero()
 
-        -- evaluate function for complete mini batch
-        -- estimate f
-        local output = model:forward(inputs)
-        numInputs = inputs:size()[1]
-        local err = criterion:forward(output, targets)
-        
-        -- f is the average of all criterions
-        local f = err
-        
-        -- estimate df/dW
-        local df_do = criterion:backward(output, targets)
-        model:backward(inputs, df_do)
-        
-        -- update confusion
-        for i=1,numInputs do
-          confusion:add(output[i], targets[i])
-        end
+		-- evaluate function for complete mini batch
+		-- estimate f
+		local output = model:forward(inputs)
+		numInputs = inputs:size()[1]
+		local err = criterion:forward(output, targets)
+		
+		-- f is the average of all criterions
+		local f = err
+		
+		-- estimate df/dW
+		local df_do = criterion:backward(output, targets)
+		model:backward(inputs, df_do)
+		
+		-- update confusion
+		for i=1,numInputs do
+		  confusion:add(output[i], targets[i])
+		end
 
-        -- normalize gradients and f(X)
-        gradParameters:div(numInputs)
+		-- normalize gradients and f(X)
+		gradParameters:div(numInputs)
 
-        -- return f and df/dX
-        return f,gradParameters
-    end
+		-- return f and df/dX
+		return f,gradParameters
+	    end
 
-    optimMethod(feval, parameters, optimState)
+	    optimMethod(feval, parameters, optimState)
+	end
 end
 
  -- time taken
  time = sys.clock() - time
- time = time / trainData:size()
+ time = time / totalSize
  print("\n==> time to learn 1 sample = " .. (time*1000) .. 'ms')
 
  -- print confusion matrix

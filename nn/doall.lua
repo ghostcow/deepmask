@@ -11,10 +11,9 @@ torch.manualSeed(opt.seed)
 ----------------------------------------------------------------------
 print '==> executing all'
 
-dofile 'data.lua'
-if not opt.loadState then
-    dofile 'model.lua'
-end
+-- dofile 'data.lua'
+dofile 'metadata.lua'
+dofile 'model.lua'
 dofile 'train.lua'
 dofile 'test.lua'
 
