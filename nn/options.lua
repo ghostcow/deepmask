@@ -14,10 +14,11 @@ function getOptions()
 	-- data:
 	cmd:option('-size', 'full', 'how many samples do we load: small | full')
     cmd:option('-dataFormat', 't7', 'dataset file type: mat | t7')
+    cmd:option('-useDatasetChunks', false, 'read datasets in chunks')
 
 	-- training:
 	-- TODO: update to defaults values to match deepface training params
-	cmd:option('-save', 'results', 'subdirectory to save/log experiments in')
+	cmd:option('-save', '../results', 'subdirectory to save/log experiments in')
 	cmd:option('-plot', false, 'live plot')
 
 		-- optimization parameters (same as Krizhevsky ImageNet)

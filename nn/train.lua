@@ -152,7 +152,10 @@ for iChunk = 1,trainData.numChunks do
 	    end
 
 	    optimMethod(feval, parameters, optimState)
-	end
+        -- grabage collection after every batch (TODO : might be too expensive...)
+        collectgarbage()
+    end
+
 end
 
  -- time taken

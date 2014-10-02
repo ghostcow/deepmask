@@ -11,8 +11,13 @@ torch.manualSeed(opt.seed)
 ----------------------------------------------------------------------
 print '==> executing all'
 
--- dofile 'data.lua'
-dofile 'metadata.lua'
+if opt.useDatasetChunks then
+    print '==> datasets is read in chunks'
+    dofile 'metadata.lua'
+else
+    dofile 'data.lua'
+end
+
 dofile 'model.lua'
 dofile 'train.lua'
 dofile 'test.lua'

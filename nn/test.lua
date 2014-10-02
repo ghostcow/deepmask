@@ -46,7 +46,10 @@ function test()
 		local outputs = model:forward(inputs)
 		for i=1,numInputs do
 			confusion:add(outputs[i], targets[i])
-		end     
+		end
+
+        -- grabage collection after every batch (TODO : might be too expensive...)
+        collectgarbage()
 	end
    end
 
