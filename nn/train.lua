@@ -55,7 +55,16 @@ else
     optimMethod = x.optimMethod
     criterion = x.criterion
 
-    -- TODO : print loaded state details here
+    -- read new learning rate from opt 
+    optimState.learningRate = opt.learningRate
+   print '==> model :'
+   print(model)
+   print '==> optimState :'
+   print(optimState)
+   print '==> optimMethod :'
+   print(optimMethod)
+   print '==> criterion :'
+   print(criterion)
 end
 
 ----------------------------------------------------------------------

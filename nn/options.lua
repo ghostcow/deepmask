@@ -20,11 +20,11 @@ function getOptions()
 	cmd:option('-save', 'results', 'subdirectory to save/log experiments in')
 	cmd:option('-plot', false, 'live plot')
 
-		-- optimization parameters
+		-- optimization parameters (same as Krizhevsky ImageNet)
 	cmd:option('-learningRate', 0.01, 'learning rate at t=0')
 	cmd:option('-learningRateDecay', 0, 'learning rate decay')
 	cmd:option('-batchSize', 128, 'mini-batch size (1 = pure stochastic)')
-	cmd:option('-weightDecay', 0, 'weight decay for SGD')
+	cmd:option('-weightDecay', 5e-4, 'weight decay for SGD')
 	cmd:option('-momentum', 0.9, 'momentum for SGD')
 	cmd:text()
 	opt = cmd:parse(arg or {})
