@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------
 -- Deepface nn model for torch7
---
+-- removing L4 & L6 to get shallower network
 -- Input: (batchsize)X3X152X152
 -- Outout: 4030 vector (aka SFC ID)
 ----------------------------------------------------------------------
@@ -9,19 +9,18 @@ require 'cunn'
 require 'ccn2'
 require 'torch'
 require 'image'
-require 'gfx.js'
 require 'options'
 
 imageDim = 152
--- filter sizes for layers C1,C3,L4,L5,L6
-filtersSize = {11, 9, 7, 7, 5}
+-- filter sizes for layers C1,C3,L5
+filtersSize = {11, 11, 7}
 maxPoolingStride = 2
 maxPoolingSize = 3
-L5_stride = 2
--- number of output maps for layers C1,C3,L4,L5,L6
-numMaps = {32, 32, 32, 32, 32}
+L5_stride = 4
+-- number of output maps for layers C1,C3,L5
+numMaps = {32, 16, 16}
 -- layers id
-layersIds = {C1=2,C3=5,L4=7,F7=11,F8=14}
+layersIds = {C1=2,C3=5,L5=7,F7=11,F8=14}
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
@@ -50,61 +49,45 @@ local outputMapDim 	     -- dimension of output map of any layer
 -- ccn2.SpatialConvolutionLocal(inputDim, #feature-maps, inputMapDim, filter-size)
 
 -- C1 layer
-model:add(ccn2.SpatialConvolution(inputDim, numMaps[1], filtersSize[1])) -- 1
+local layerIndex = 1
+model:add(ccn2.SpatialConvolution(inputDim, numMaps[layerIndex], filtersSize[layerIndex])) -- 1
 model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[1] + 1
-print(string.format('C1 : %dx%dx%dx%d@%dx%d', 
-	numMaps[1], filtersSize[1], filtersSize[1], inputDim, outputMapDim, outputMapDim))
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
+print(string.format('C1 : %dx%dx%dx%d@%dx%d',
+    numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- M2 layer
 inputMapDim = outputMapDim
 model:add(ccn2.SpatialMaxPooling(maxPoolingSize, maxPoolingStride)) -- 3
 outputMapDim = inputMapDim / maxPoolingStride
-print(string.format('M2 : %dx%dx%dx%d@%dx%d', 
-	numMaps[1], maxPoolingSize, maxPoolingSize, numMaps[1], outputMapDim, outputMapDim))
+print(string.format('M2 : %dx%dx%dx%d@%dx%d',
+    numMaps[1], maxPoolingSize, maxPoolingSize, numMaps[1], outputMapDim, outputMapDim))
 
 -- C3 layer
-inputDim = numMaps[1]
+inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolution(inputDim, numMaps[2], filtersSize[2])) -- 4
+model:add(ccn2.SpatialConvolution(inputDim, numMaps[layerIndex], filtersSize[layerIndex])) -- 4
 model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[2] + 1
-print(string.format('C3 : %dx%dx%dx%d@%dx%d', 
-	numMaps[2], filtersSize[2], filtersSize[2], inputDim, outputMapDim, outputMapDim))
-
--- L4 layer
-inputDim = numMaps[2]
-inputMapDim = outputMapDim
-L4_stride = 4
-model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[3], inputMapDim, filtersSize[3], L4_stride)) -- 6
-model:add(nn.ReLU())
-outputMapDim = (inputMapDim - filtersSize[3])/L4_stride + 1
-print(string.format('L4 : %dx%dx%dx%d@%dx%d', 
-	numMaps[3], filtersSize[3], filtersSize[3], inputDim, outputMapDim, outputMapDim))
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
+print(string.format('C3 : %dx%dx%dx%d@%dx%d',
+    numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- L5 layer
---inputDim = numMaps[3]
---inputMapDim = outputMapDim
---model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[4], inputMapDim, filtersSize[4], L5_stride)) -- 8
---model:add(nn.ReLU())
---outputMapDim = (inputMapDim - filtersSize[4])/L5_stride + 1
---print(string.format('L5 : %dx%dx%dx%d@%dx%d', 
---	numMaps[4], filtersSize[4], filtersSize[4], inputDim, outputMapDim, outputMapDim))
-
--- L6 layer
---inputDim = numMaps[4]
---inputMapDim = outputMapDim
---model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[5], inputMapDim, filtersSize[5])) -- 10
---model:add(nn.ReLU())
---outputMapDim = inputMapDim - filtersSize[5] + 1
---print(string.format('L6 : %dx%dx%dx%d@%dx%d', 
---	numMaps[5], filtersSize[5], filtersSize[5], inputDim, outputMapDim, outputMapDim))
+inputDim = numMaps[layerIndex - 1]
+inputMapDim = outputMapDim
+model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex], L5_stride)) -- 8
+model:add(nn.ReLU())
+outputMapDim = math.ceil((inputMapDim - filtersSize[layerIndex])/L5_stride) + 1
+print(string.format('L5 : %dx%dx%dx%d@%dx%d',
+    numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
 model:add(nn.Transpose({4,1},{4,2},{4,3}))
 -- transform the output into a vector
-local outputSize = numMaps[3]*outputMapDim*outputMapDim
---local outputSize = numMaps[5]*outputMapDim*outputMapDim
+local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
 model:add(nn.Reshape(outputSize, true))
 
 -- F7 layer
@@ -127,10 +110,11 @@ end
 
 
 if opt.visualize then
+    require 'gfx.js'
     print '==> visualizing filters'
     for layerName, layerId in pairs(layersIds) do
         weights = model:get(layerId).weight
-	print(string.format('%s : %dx%d', layerName, weights:size()[1], weights:size()[2]))
+        print(string.format('%s : %dx%d', layerName, weights:size()[1], weights:size()[2]))
         gfx.image(weights, {zoom=2, legend=layerName})
     end
 end

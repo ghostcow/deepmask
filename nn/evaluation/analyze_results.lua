@@ -1,7 +1,7 @@
 require 'optim'
 require 'gnuplot'
 
-confusion = torch.load('results/confusion_train')
+confusion = torch.load('../results_small_model2/confusion_train')
 confusion = confusion.mat
 numPersons = confusion:size()[1]
 
@@ -14,3 +14,4 @@ for iPerson = 1,numPersons do
 end
 
 gnuplot.plot(successRates)
+

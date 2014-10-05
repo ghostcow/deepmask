@@ -5,6 +5,7 @@ print '==> processing options'
 opt = getOptions()
 -- opt.visualize = true
 opt.size = 'full'
+opt.visualize = true
 
 -- nb of threads and fixed seed (for repeatable experiments)
 torch.setnumthreads(opt.threads)
@@ -12,7 +13,7 @@ torch.manualSeed(opt.seed)
 
 ----------------------------------------------------------------------
 imageDim = 152
-numPersons = 240
+numPersons = 559
 
 dofile 'model2.lua'
 
@@ -37,7 +38,7 @@ print '--------forward pass--------'
 output = model:forward(inputs)
 t = targets[1]
 err = criterion:forward(output, t)
-print(string.foramt('error = %f', err))
+print(string.format('error = %f', err))
 print '--------backward pass--------'
 df_do = criterion:backward(output, t)
 model:backward(inputs, df_do)

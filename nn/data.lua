@@ -12,12 +12,12 @@ local data_file
 
 if opt.size == 'small' then
   print '==> loading small dataset'
-  data_file = '../data_set/cfw/cfw_small'
-  numPersons = 200
+  data_file = '../data_files/CFW_small/cfw_small'
+  numPersons = 14
 elseif opt.size == 'full' then
   print '==> loading full dataset'
   -- this dataset contain only persons with 30-80 training samples
-  data_file = '../data_files/aligned/cfw_flat'
+  data_file = '../data_files/CFW_small/cfw_flat'
   numPersons = 559
 else
     error('unsupprted size option : '..opt.size)

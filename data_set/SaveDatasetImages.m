@@ -7,10 +7,10 @@ batchSize = 128;
 imSize = [152 152];
 
 %% change paths here
-outputFilePathFormat = '../data_files/aligned/cfw_flat';
+inputFilePath = '../data/CFW_small/images';
+outputFilePathFormat = '../data_files/CFW_small/cfw_small';
 
 % input txt files
-inputFilePath = 'cfw/images';
 inputFilePathTrain = [inputFilePath '_train.txt'];
 inputFilePathTest = [inputFilePath '_test.txt'];
 

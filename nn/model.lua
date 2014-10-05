@@ -49,11 +49,13 @@ local outputMapDim 	     -- dimension of output map of any layer
 -- ccn2.SpatialConvolutionLocal(inputDim, #feature-maps, inputMapDim, filter-size)
 
 -- C1 layer
-model:add(ccn2.SpatialConvolution(inputDim, numMaps[1], filtersSize[1])) -- 1
+local layerIndex = 1
+model:add(ccn2.SpatialConvolution(inputDim, numMaps[layerIndex], filtersSize[layerIndex])) -- 1
 model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[1] + 1
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
 print(string.format('C1 : %dx%dx%dx%d@%dx%d', 
-	numMaps[1], filtersSize[1], filtersSize[1], inputDim, outputMapDim, outputMapDim))
+	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- M2 layer
 inputMapDim = outputMapDim
@@ -63,45 +65,49 @@ print(string.format('M2 : %dx%dx%dx%d@%dx%d',
 	numMaps[1], maxPoolingSize, maxPoolingSize, numMaps[1], outputMapDim, outputMapDim))
 
 -- C3 layer
-inputDim = numMaps[1]
+inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolution(inputDim, numMaps[2], filtersSize[2])) -- 4
+model:add(ccn2.SpatialConvolution(inputDim, numMaps[layerIndex], filtersSize[layerIndex])) -- 4
 model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[2] + 1
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
 print(string.format('C3 : %dx%dx%dx%d@%dx%d', 
-	numMaps[2], filtersSize[2], filtersSize[2], inputDim, outputMapDim, outputMapDim))
+	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- L4 layer
-inputDim = numMaps[2]
+inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[3], inputMapDim, filtersSize[3])) -- 6
+model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex])) -- 6
 model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[3] + 1
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
 print(string.format('L4 : %dx%dx%dx%d@%dx%d', 
-	numMaps[3], filtersSize[3], filtersSize[3], inputDim, outputMapDim, outputMapDim))
+	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- L5 layer
-inputDim = numMaps[3]
+inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[4], inputMapDim, filtersSize[4], L5_stride)) -- 8
+model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex], L5_stride)) -- 8
 model:add(nn.ReLU())
-outputMapDim = (inputMapDim - filtersSize[4])/L5_stride + 1
+outputMapDim = (inputMapDim - filtersSize[layerIndex])/L5_stride + 1
 print(string.format('L5 : %dx%dx%dx%d@%dx%d', 
-	numMaps[4], filtersSize[4], filtersSize[4], inputDim, outputMapDim, outputMapDim))
+	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- L6 layer
-inputDim = numMaps[4]
+inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[5], inputMapDim, filtersSize[5])) -- 10
+model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex])) -- 10
 model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[5] + 1
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
 print(string.format('L6 : %dx%dx%dx%d@%dx%d', 
-	numMaps[5], filtersSize[5], filtersSize[5], inputDim, outputMapDim, outputMapDim))
+	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
 model:add(nn.Transpose({4,1},{4,2},{4,3}))
 -- transform the output into a vector
-local outputSize = numMaps[4]*outputMapDim*outputMapDim
+local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
 model:add(nn.Reshape(outputSize, true))
 
 -- F7 layer

@@ -40,7 +40,7 @@ function faceImg = alignimg(img, landmarks, alignparams)
     y1 = y1 * scale;
 
     % compute alignment transform
-    tform = cp2tform(landmarks', basePts', 'similarity');
+    tform = cp2tform(landmarks', basePts', 'affine');
     
     % apply transform and do crop
     faceImg = imtransform(img, tform, 'bicubic', 'XData', [x0 x1], ...

@@ -1,7 +1,8 @@
+datasetFilePathFormat = '../data_files/CFW_small/cfw_small';
+
 imSize = [152, 152];        
-datasetFilePathFormat = '../data_files/aligned/cfw_flat';
-trainSize = 17920 + 16640;
-testSize = 14848;
+trainSize = 0;
+testSize = 0;
 
 train = single(zeros(trainSize, 3, imSize(1), imSize(2)));
 trainLabels = uint16(zeros(trainSize, 1));

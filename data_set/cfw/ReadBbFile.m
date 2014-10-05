@@ -21,7 +21,6 @@ while ~feof(fid)
         end
         
         imageName = C{1};
-        imageName = imageName(9:end);
         gtFaces(imageName) = faces;
     end
 end

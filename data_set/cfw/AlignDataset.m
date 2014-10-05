@@ -1,16 +1,16 @@
-clear all;
 close all;
 
 warning('off','MATLAB:iofun:UnsupportedEncoding');
 currDir = fileparts(mfilename('fullpath'));
 run(fullfile(currDir, '..', '..', 'img_preproc', 'init.m'));
 
-mainDir = 'D:\_Dev\Datasets\Face Recognition\CFW';
+%mainDir = 'D:\_Dev\Datasets\Face Recognition\CFW';
+mainDir = '/media/data/datasets/CFW';
 
 filteredFacesDir = fullfile(mainDir, 'filtered_faces');
 allImagesDir = fullfile(mainDir, 'images');
-alignedImagesDir = fullfile(mainDir, 'filtered_aligned');
-% gtFaces = ReadBbFile(fullfile(mainDir, 'bbox.txt'));
+alignedImagesDir = fullfile(mainDir, 'filtered_aligned_affine');
+% gtFaces = ReadBbFile(fullfile(mainDir, 'bbox_dlDetector.txt'));
 % save('bbox.mat', 'gtFaces');
 load('bbox.mat', 'gtFaces');
 detectionsFileName = 'detections.txt';
@@ -21,7 +21,7 @@ nPersons = length(figDirs);
 imSize = [152,152];
 
 fid = fopen(detectionsFileName, 'a+');
-for iFigure = 1:nPersons
+for iFigure = 250:nPersons
     fprintf('%d - %s\n', iFigure, figDirs(iFigure).name);
     currDir = fullfile(filteredFacesDir, figDirs(iFigure).name);
     origImagesDir = fullfile(allImagesDir, figDirs(iFigure).name);
@@ -97,8 +97,8 @@ for iFigure = 1:nPersons
         if (iCorrectFace ~= 0)
             alignedImagePath = fullfile(outputDir, ...
                 [images(iImage).name(1:end-3) 'jpg']);
-            imwrite(aligned_imgs{iCorrectFace}, alignedImagePath);
-            fprintf(fid, '%s %d %d %d %d\n', relImageName, ...
+            imwrite(im2single(aligned_imgs{iCorrectFace}), alignedImagePath);
+            fprintf(fid, '%s,%s,%d %d %d %d\n', imPath, alignedImagePath, ...
                 detection(1, iCorrectFace), detection(2, iCorrectFace), ...
                 detection(3, iCorrectFace), detection(4, iCorrectFace));
         else

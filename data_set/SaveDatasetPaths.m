@@ -2,8 +2,8 @@
 % format is : [image path],[label]
 
 %% change paths here
-mainDir = '/media/data/datasets/CFW/filtered_aligned';
-outputFilePath = 'cfw/images';
+mainDir = '/media/data/datasets/CFW/filtered_aligned_small';
+outputFilePath = '../data/CFW_small/images';
 
 % output txt files
 outputFilePathTrain = [outputFilePath '_train.txt'];
@@ -13,8 +13,8 @@ outputFilePathTest = [outputFilePath '_test.txt'];
 trainPerc = 0.7;
 
 % optional - defining minimum & maximum samples per person
-trainingSamples = [30 80]; % use [0 inf] to take all images
-maxTestSamples = ceil(trainingSamples(2)*trainPerc);
+trainingSamples = [0 inf]; % use [0 inf] to take all images
+maxTestSamples = ceil(trainingSamples(2)*(1-trainPerc));
 
 % start iterating
 figDirs = dir(mainDir);
@@ -53,6 +53,7 @@ for iPerson = 1:nPersons
             nImagesToTake = nImages;
             imageIndices = randperm(nImages);
         end
+        disp(nImagesToTake);
         
         % write image paths to files
         for iImage = 1:nImagesToTake
