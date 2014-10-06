@@ -3,8 +3,6 @@ require 'options'
 ----------------------------------------------------------------------
 print '==> processing options'
 opt = getOptions()
--- opt.visualize = true
-opt.size = 'full'
 opt.visualize = true
 
 -- nb of threads and fixed seed (for repeatable experiments)

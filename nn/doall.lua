@@ -18,7 +18,7 @@ else
     dofile 'data.lua'
 end
 
-dofile 'model.lua'
+dofile(opt.modelName..'.lua')
 dofile 'train.lua'
 dofile 'test.lua'
 

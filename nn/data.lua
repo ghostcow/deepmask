@@ -8,37 +8,18 @@ if not opt then
     opt = getOptions()
 end
 
-local data_file
-
-if opt.size == 'small' then
-  print '==> loading small dataset'
-  data_file = '../data_files/CFW_small/cfw_small'
-  numPersons = 14
-elseif opt.size == 'full' then
-  print '==> loading full dataset'
-  -- this dataset contain only persons with 30-80 training samples
-  data_file = '../data_files/CFW_flat/cfw_flat'
-  numPersons = 559
-else
-    error('unsupprted size option : '..opt.size)
-end
-
--- classes - define classes array (used later for computing confusion matrix)
-classes = {}
-for i=1,numPersons do
-  table.insert(classes, tostring(i))
-end
-
+local data_file_path = opt.dataPath
+fileFormat = string.sub(data_file_path, -3)
 local data_set
-if (opt.dataFormat == 'mat') then
+if (fileFormat == 'mat') then
     require 'mattorch'
-    -- look for mat file
-    data_set = mattorch.load(data_file..'.mat')
-elseif (opt.dataFormat == 't7') then
-    -- look for torch file
-    data_set = torch.load(data_file..'.t7')
+    -- expect mat file
+    data_set = mattorch.load(data_file_path)
+elseif (fileFormat == '.t7') then
+    -- expect torch file
+    data_set = torch.load(data_file_path)
 else
-    error('unsupprted dataFormat option : '..opt.dataFormat)
+    error('unsupprted dataFormat option : '..string.sub(data_file_path, -3))
 end
 
 trsize = data_set.train:size()[4]
@@ -69,6 +50,13 @@ testData = {
 	getChunk = function(iChunk) return testDataInner end
 }
 
+-- classes - define classes array (used later for computing confusion matrix)
+nLabels = trainDataInner.labels:max()
+classes = {}
+for i=1,nLabels do
+    table.insert(classes, tostring(i))
+end
+
 ------preprocessing - ?
 
 ------visualizing data---------------------------
@@ -78,10 +66,10 @@ if opt.visualize then
   if (require 'gnuplot') then
 	  gnuplot.figure(1)
 	  gnuplot.hist(trainDataInner.labels, trainDataInner.labels:max())
-	  gnuplot.title('#samples per person - training')
+	  gnuplot.title('#samples per label - training')
 	  gnuplot.figure(2)
 	  gnuplot.hist(testDataInner.labels, testDataInner.labels:max())
-	  gnuplot.title('#samples per person - test')
+	  gnuplot.title('#samples per label - test')
   end
 
   local first100Samples_train = trainDataInner.data[{ {1,100} }]

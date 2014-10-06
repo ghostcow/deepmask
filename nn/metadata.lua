@@ -8,7 +8,7 @@ if not opt then
     opt = getOptions()
 end
 
-numPersons = 559
+nLabels = 559
 
 -- classes - define classes array (used later for computing confusion matrix)
 classes = {}
