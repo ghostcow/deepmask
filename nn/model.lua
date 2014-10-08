@@ -89,7 +89,7 @@ inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
 model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex], L5_stride)) -- 8
 model:add(nn.ReLU())
-outputMapDim = (inputMapDim - filtersSize[layerIndex])/L5_stride + 1
+outputMapDim = math.ceil((inputMapDim - filtersSize[layerIndex])/L5_stride) + 1
 print(string.format('L5 : %dx%dx%dx%d@%dx%d', 
 	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
 layerIndex = layerIndex + 1

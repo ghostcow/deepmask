@@ -61,3 +61,5 @@ for iImage = 1:length(falseSamples)
         fprintf(fidTest, '%s,2\n', falseSamples{iImage});
     end
 end
+fclose(fidTrain);
+fclose(fidTest);

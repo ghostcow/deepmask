@@ -9,8 +9,20 @@ torch.setnumthreads(opt.threads)
 torch.manualSeed(opt.seed)
 
 ----------------------------------------------------------------------
-print '==> executing all'
+--------- write options table to log file ----------------------------
+os.execute('mkdir -p ' .. opt.save)
+logFilePath = paths.concat(opt.save, 'doall.log')
+fid = io.open(logFilePath,"a")
+fid:write(os.date("%Y_%m_%d_%X"), '\n')
+fid:write("opt : {")
+for filedName,fieldValue in pairs(opt) do
+    fid:write(filedName, " = ", tostring(fieldValue), ', ')
+end
+fid:write("}\n\n")
+fid:close()
 
+----------------------------------------------------------------------
+print '==> executing all'
 if opt.useDatasetChunks then
     print '==> datasets is read in chunks'
     dofile 'metadata.lua'

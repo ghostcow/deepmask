@@ -2,11 +2,10 @@ require 'gfx.js'
 require 'options'
 
 opt = getOptions()
-opt.size = 'small'
 dofile 'data.lua'
 imageDim = 152
 
-print '==> samples per person'
+------------- samples per class
 if (require 'gnuplot') then
     gnuplot.figure(1)
     gnuplot.hist(trainDataInner.labels, trainDataInner.labels:max())
@@ -16,17 +15,20 @@ if (require 'gnuplot') then
     gnuplot.title('#samples per person - test')
 end
 
-hist = torch.Tensor(numPersons):fill(0)
+hist = torch.Tensor(nLabels):fill(0)
 for iImage = 1,trainDataInner:size() do
     label = trainDataInner.labels[iImage]
     hist[label] = hist[label] + 1
 end
-class_weights = torch.Tensor(numPersons):fill(0)
-for iPerson = 1,numPersons do
+class_weights = torch.Tensor(nLabels):fill(0)
+for iPerson = 1,nLabels do
     class_weights[iPerson] = 1 / hist[iPerson]
 end
--- class_weights = class_weights / class_weights:sum()
+class_weights = class_weights / class_weights:sum()
+print('class weights in cost function :')
+print(class_weights)
 
+------------- show some
 nImages = 100
 for iSet = 1,2 do
     if (iSet == 1) then
@@ -37,7 +39,7 @@ for iSet = 1,2 do
         setName = 'test'
     end
 
-    for iPerson = 2,2 do --numPersons do
+    for iPerson = 1,nLabels do
         print('==> random images per person '..tostring(iPerson))
         dataSamples = torch.Tensor(nImages, 3, imageDim, imageDim)
         nTotalImages = dataset:size()
