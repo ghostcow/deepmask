@@ -65,9 +65,10 @@ function test()
    torch.save(filename_confusion, confusion)
    
    -- update log/plot
-   testLogger:add{['% mean class accuracy (test set)'] = confusion.totalValid * 100}
+   testLogger:add{['% total accuracy'] = confusion.totalValid * 100, 
+     ['% average accuracy'] = confusion.averageValid * 100}
    if opt.plot then
-      testLogger:style{['% mean class accuracy (test set)'] = '-'}
+      testLogger:style{['% total accuracy'] = '-'}
       testLogger:plot()
    end
 

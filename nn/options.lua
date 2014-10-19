@@ -17,11 +17,12 @@ function getOptions()
     cmd:option('--useDatasetChunks', false, 'read datasets in chunks')
 
 	-- training:
-	-- TODO: update to defaults values to match deepface training params
 	cmd:option('--save', '../results', 'subdirectory to save/log experiments in')
 	cmd:option('--plot', false, 'live plot')
+    cmd:option('--balanceClasses', false, 'whether to use balance cost for classes in the NLL criterion')
+    cmd:option('--freezeLayers', '', 'layers indices (seperated by comma) whose parameters will not be updated during training')
 
-		-- optimization parameters (same as Krizhevsky ImageNet)
+	-- optimization parameters (same as Krizhevsky ImageNet)
 	cmd:option('--learningRate', 0.01, 'learning rate at t=0')
 	cmd:option('--learningRateDecay', 0, 'learning rate decay')
 	cmd:option('--batchSize', 128, 'mini-batch size (1 = pure stochastic)')

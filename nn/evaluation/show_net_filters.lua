@@ -11,8 +11,7 @@ inputDim = {3, 32}
 
 --
 print '--- Loading model ---'
-model_data = torch.load('../results_small_model2/model.net')
-model = model_data.model:float()
+model = torch.load('../results/test_convert_model/model.net'):float()
 
 -- C1 : 32x11x11x3, weights format : (11*11*3)x32
 -- C3 : 16x9x9x32, weights format : (9*9*32)x16

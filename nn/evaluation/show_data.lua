@@ -9,10 +9,10 @@ imageDim = 152
 if (require 'gnuplot') then
     gnuplot.figure(1)
     gnuplot.hist(trainDataInner.labels, trainDataInner.labels:max())
-    gnuplot.title('#samples per person - training')
+    gnuplot.title('#samples per class - training')
     gnuplot.figure(2)
     gnuplot.hist(testDataInner.labels, testDataInner.labels:max())
-    gnuplot.title('#samples per person - test')
+    gnuplot.title('#samples per class - test')
 end
 
 hist = torch.Tensor(nLabels):fill(0)
@@ -20,9 +20,11 @@ for iImage = 1,trainDataInner:size() do
     label = trainDataInner.labels[iImage]
     hist[label] = hist[label] + 1
 end
+print(hist)
+
 class_weights = torch.Tensor(nLabels):fill(0)
-for iPerson = 1,nLabels do
-    class_weights[iPerson] = 1 / hist[iPerson]
+for iClass = 1,nLabels do
+    class_weights[iClass] = 1 / hist[iClass]
 end
 class_weights = class_weights / class_weights:sum()
 print('class weights in cost function :')
@@ -39,15 +41,17 @@ for iSet = 1,2 do
         setName = 'test'
     end
 
-    for iPerson = 1,nLabels do
-        print('==> random images per person '..tostring(iPerson))
+    for iClass = 1,1 do --nLabels do
+        print(setName)
+        print(dataset.size())
+        print('==> random images per class '..tostring(iClass))
         dataSamples = torch.Tensor(nImages, 3, imageDim, imageDim)
         nTotalImages = dataset:size()
         shuffle = torch.linspace(1, nTotalImages, nTotalImages) -- torch.randperm(nTotalImages)
         i = 1
         for iImage = 1,nTotalImages do
             label = dataset.labels[shuffle[iImage]]
-            if (label == iPerson) then
+            if (label == iClass) then
                 dataSamples[i] = dataset.data[shuffle[iImage]]
                 i = i + 1
             end
@@ -55,7 +59,7 @@ for iSet = 1,2 do
                 break
             end
         end
-        gfx.image(dataSamples, {legend=tostring(iPerson)..' - '..setName})
+        gfx.image(dataSamples, {legend=tostring(iClass)..' - '..setName})
     end
 end
 
