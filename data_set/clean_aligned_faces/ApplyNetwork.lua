@@ -22,7 +22,7 @@ function processBatch(fid, imagePaths)
     for iImage = 1,nImages do
         imPath = imagePaths[iImage]
         result = outputs[iImage]
-        fid:write(imPath,tostring(result[1]),tostring(result[2]),'\n')
+        fid:write(imPath,',',tostring(result[1]),',',tostring(result[2]),'\n')
     end
 end
 
