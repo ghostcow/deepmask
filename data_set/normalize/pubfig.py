@@ -20,7 +20,7 @@ def generate_image_to_identity_dict(info_file_path):
 
 
 def main(src_dir, dst_dir):
-    dst_dir = os.path.join(dst_dir, 'SUFR')
+    dst_dir = os.path.join(dst_dir, 'pubfig')
 
     if not os.path.exists(dst_dir):
         os.mkdir(dst_dir)
