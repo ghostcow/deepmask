@@ -98,25 +98,7 @@ for iTestFold = 1:numFolds
     if wasFlipped
       testRes = -testRes; 
     end
-    testAccuracy = mean(sign(testRes) == testLabels');
-    accuracies(iTestFold) = testAccuracy;
-        
-    if strcmp(classifierType, 'libsvm')
-        [predicted_label, accuracy, decision_values] = ...
-            svmpredict(testLabels, chiSquaredDistsTest', classifier);
-        accuracies(iTestFold) = accuracy(1);
-    elseif strcmp(classifierType, 'liblinear')
-        sc = [weights bias] * [chiSquaredDistsTest; ones(1, size(chiSquaredDistsTest, 2))];
-        if wasflipped
-          sc = -sc; 
-        end
-
-        corrects = sign(sc) == testLabels';
-        accuracies(iTestFold) = mean(corrects);
-    else
-        error('unknown classifier type');
-    end
-        
+    accuracies(iTestFold) = mean(sign(testRes) == testLabels');
     fprintf('Fold no. %d - accuracy = %f %% \n', iTestFold, accuracies(iTestFold));
 end
 fprintf('average accuracy = %f %% \n', mean(accuracies));
