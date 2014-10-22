@@ -10,11 +10,13 @@ allImagesDir = fullfile(mainDir, 'lfw');
 alignedImagesDir = fullfile(mainDir, 'lfw_aligned');
 % whether to take only the central face or all faces
 useCenterFace = true;
-isOverWrite = true;
+isOverWrite = false;
+
 %%
 figDirs = dir(allImagesDir);
 figDirs = figDirs(3:end);
 nPersons = length(figDirs);
+noFacesCounter = 0;
 
 detectionsFileName = 'detections_lfw.txt';
 fid = fopen(detectionsFileName, 'a+');
@@ -42,11 +44,12 @@ for iFigure = 1:nPersons
             [detection, landmarks, aligned_imgs] = align_face(opts, imPath);
         catch me
             fprintf('%s - Error - %s\n', imPath, me.message);
-            continue;
+            error('');
         end
 
         nFaces = length(aligned_imgs);
         if (nFaces == 0)
+            noFacesCounter = noFacesCounter + 1;
             continue;
         end
         
@@ -84,3 +87,4 @@ for iFigure = 1:nPersons
     end
 end
 fclose(fid);
+fprintf('#pictures with no faces found = %d\n', noFacesCounter);

@@ -1,6 +1,6 @@
 require 'svm'
 
-LIBSVM_TRAIN_OPTIONS = ''
+LIBSVM_TRAIN_OPTIONS = '-t 0'
 
 function generateSparseTensor(tensor)
     local temp = {}
@@ -37,8 +37,8 @@ function tensorToSvmFormat(data_set, labels)
     return svm_data
 end
 
-function chiSquaredDiff(id1, id2)
-    return torch.cdiv(torch.power(id1 - id2,2),id1 + id2)
+function chiSquaredDist(id1, id2)
+    return torch.cdiv(torch.pow(id1 - id2,2),id1 + id2 + 0.0001)
 end
 
 ----------------------------------------------------------------------
@@ -47,28 +47,27 @@ end
 --    labels    =   tensor of N of {1,-1}
 ----------------------------------------------------------------------
 function trainChiSquared(data_set, labels)
-    chiSquaredDiffs = torch.FloatTensor(data_set:size(1))
-
+    chiSquaredDists = torch.FloatTensor(data_set:size(1), data_set:size(3))
     for i = 1, data_set:size(1) do
-        chiSquaredDiffs[i] = chiSquaredDiff(data_set[i][1], data_set[i][2])
+        chiSquaredDists[i] = chiSquaredDist(data_set[i][1], data_set[i][2])
     end
 
-    local train_data = tensorToSvmFormat(chiSquaredDiffs, labels)
+    local train_data = tensorToSvmFormat(chiSquaredDists, labels)
     return libsvm.train(train_data, LIBSVM_TRAIN_OPTIONS)
 end
 
 
 ----------------------------------------------------------------------
--- Receives a data_set to train on in following format:
---    data  =    tensor of N X 2 X 4096 dimensions
+-- Receives a data_set to test on in following format:
+--    data_set  =    tensor of N X 2 X 4096 dimensions
+--    labels    =   tensor of N of {1,-1}
 ----------------------------------------------------------------------
-function predictChiSquared(data_set)
-    chiSquaredDiffs = torch.FloatTensor(data_set:size(1))
-
+function predictChiSquared(classifier, data_set, labels)
+    chiSquaredDists = torch.FloatTensor(data_set:size(1), data_set:size(3))
     for i = 1, data_set:size(1) do
-        chiSquaredDiffs[i] = chiSquaredDiff(data_set[i][1], data_set[i][2])
+        chiSquaredDists[i] = chiSquaredDist(data_set[i][1], data_set[i][2])
     end
 
-    local predict_data = tensorToSvmFormat(chiSquaredDiffs, labels)
-    return libsvm.train(predict_data, LIBSVM_TRAIN_OPTIONS)
+    local predict_data = tensorToSvmFormat(chiSquaredDists, labels)
+    return libsvm.predict(predict_data, classifier)
 end
