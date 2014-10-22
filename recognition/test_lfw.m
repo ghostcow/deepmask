@@ -8,7 +8,7 @@ useNormalization = true;
 p = 2; % which p to use in Lp normalizarion
 numFolds = 10;
 numPairsPerFold = 300;
-classifierType = 'libsvm'; % options : libsvm / liblinear
+classifierType = 'liblinear'; % options : libsvm / liblinear
 
 %% load data
 testData = load('testData.mat'); testData = testData.x;
@@ -66,9 +66,9 @@ for iTestFold = 1:numFolds
         weights = sum(bsxfun(@times, classifier.sv_coef, classifier.SVs));
         bias = -classifier.rho;
     elseif strcmp(classifierType, 'liblinear')
-        classifier = train(trainLabels, sparse(chiSquaredDistsTrain'), '-s 3'); % -s 3 -c 0.05 ?
-        weights = classifier.w;
-        bias = -classifier.bias;
+        classifier = train(trainLabels, sparse(chiSquaredDistsTrain'), '-B 1'); % -s 3 -c 0.05 ?
+        weights = classifier.w(1:end-1);
+        bias = classifier.w(end);
     else
         error('unknown classifier type');
     end
