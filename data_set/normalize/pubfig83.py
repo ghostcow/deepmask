@@ -3,7 +3,7 @@ import os
 
 
 def main(src_dir, dst_dir):
-    dst_dir = os.path.join(dst_dir, 'pubfig')
+    dst_dir = os.path.join(dst_dir, 'pubfig83')
     images_dirs_path = os.listdir(src_dir)
 
     if not os.path.exists(dst_dir):
