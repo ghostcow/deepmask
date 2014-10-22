@@ -206,6 +206,9 @@ for iChunk = 1,trainData.numChunks do
             numInputs = inputs:size()[1]
             local err = criterion:forward(output, targets)
 
+            -- f is the average of all criterions
+            totalErr = totalErr + err
+
             -- estimate df/dW
             local df_do = criterion:backward(output, targets)
             model:backward(inputs, df_do)
