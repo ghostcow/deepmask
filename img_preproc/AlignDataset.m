@@ -5,12 +5,14 @@ currDir = fileparts(mfilename('fullpath'));
 run(fullfile(currDir, 'init.m'));
 
 %% Define all paths here
-mainDir = '/media/data/datasets/LFW';
-allImagesDir = fullfile(mainDir, 'lfw');
-alignedImagesDir = fullfile(mainDir, 'lfw_aligned');
+mainDir = '/media/data/datasets/pubfig';
+allImagesDir = fullfile(mainDir, 'images');
+alignedImagesDir = fullfile(mainDir, 'aligned');
+detectionsFileName = 'detections_pubfig.txt';
+
 % whether to take only the central face or all faces
-useCenterFace = true;
-isOverWrite = false;
+useCenterFace = false;
+isOverWrite = true;
 
 %%
 figDirs = dir(allImagesDir);
@@ -18,8 +20,7 @@ figDirs = figDirs(3:end);
 nPersons = length(figDirs);
 noFacesCounter = 0;
 
-detectionsFileName = 'detections_lfw.txt';
-fid = fopen(detectionsFileName, 'a+');
+fid = fopen(detectionsFileName, 'w');
 for iFigure = 1:nPersons
     fprintf('%d - %s\n', iFigure, figDirs(iFigure).name);
     currDir = fullfile(allImagesDir, figDirs(iFigure).name);
@@ -44,7 +45,6 @@ for iFigure = 1:nPersons
             [detection, landmarks, aligned_imgs] = align_face(opts, imPath);
         catch me
             fprintf('%s - Error - %s\n', imPath, me.message);
-            error('');
         end
 
         nFaces = length(aligned_imgs);
@@ -53,7 +53,6 @@ for iFigure = 1:nPersons
             continue;
         end
         
-
         if (nFaces == 1)
             imwrite(im2double(aligned_imgs{1}), alignedImagePath);   
             fprintf(fid, '%s,%s,%d %d %d %d\n', imPath, alignedImagePath, ...
@@ -73,8 +72,8 @@ for iFigure = 1:nPersons
                         detection(1, iCorrectFace), detection(2, iCorrectFace), ...
                         detection(3, iCorrectFace), detection(4, iCorrectFace));  
             else
-                % save all additional faces
-                for iFace = 2:nFaces
+                % save all faces
+                for iFace = 1:nFaces
                     alignedImagePath = fullfile(outputDir, ...
                         [images(iImage).name(1:end-4) '.' num2str(iFace) '.jpg']);
                     imwrite(im2double(aligned_imgs{iFace}), alignedImagePath);
