@@ -75,11 +75,15 @@ for iTestFold = 1,LfwUtils.numFolds do
             foldIndex = foldIndex + 2*LfwUtils.numPairsPerFold
         end
     end
+    testFold = pairsData[iTestFold]
+    testData, testLabels = LfwUtils.getFoldPairsFeatures(testFold, faceFeatures)
 
     if (iTestFold == 1) then
         --- save data into mat files
         mattorch.save('trainData.mat', trainData:double())
         mattorch.save('trainLabels.mat', trainLabels:double())
+        mattorch.save('testData.mat', testData:double())
+        mattorch.save('testLabels.mat', testLabels:double())
     end
     --- TODO : normalize both trainData & testData, based on trainData values
 
@@ -90,14 +94,6 @@ for iTestFold = 1,LfwUtils.numFolds do
 
     --- test the classifier
     print('testing...')
-    testFold = pairsData[iTestFold]
-    testData, testLabels = LfwUtils.getFoldPairsFeatures(testFold, faceFeatures)
-    if (iTestFold == 1) then
-        --- save data into mat files
-        mattorch.save('testData.mat', testData:double())
-        mattorch.save('testLabels.mat', testLabels:double())
-    end
-
     l,acc,d = predictChiSquared(classifier, testData, testLabels)
     accuracies[iTestFold] = acc[1]
 end
