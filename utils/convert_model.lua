@@ -1,11 +1,17 @@
--- loading model trained on cfw_small and copy all layer weights (except the last one) into model fit to full cfw
+-- loading model trained on one dataset and copy all layer weights (instead of the last fully connected layer)
+-- into a new model with different class labels
+-- allowed conversions : model --> model, model2 -->model2, ...
 
-sourceModelPath = '../results/results_cfw_small2_model2/model.net'
-targetModelPath = '../results/cfw_clean_model2_init_cfw_small2/model.net'
+modelName = 'model_N4'
+sourceModelPath = '../results/cfw_small2_model_N4/model.net'
+targetModelPath = '../results/cfw_clean_model_N4_init_cfw_small2/model.net'
+nLabels = 588
 
-print '==> initializing model with 556 persons'
-nLabels = 556
-dofile 'model2.lua'
+-- indices of the layers which will be copied
+layerIds = {2,5,7,11} -- {C1=2,C3=5,L5=7,F7=11,F8=14}
+
+print '==> initializing model'
+dofile(modelName..'.lua')
 print '==> changing model to CUDA'
 model:add(nn.LogSoftMax())
 model:cuda()
@@ -15,9 +21,7 @@ print '==> loading pre-trained model'
 model_trained = torch.load(sourceModelPath)
 
 print '==> copying relevant layers (all except F8)'
--- copy layers weights
-layerIds = {2,5,7,11} -- {C1=2,C3=5,L5=7,F7=11,F8=14}
-for iLayer = 1,4 do
+for iLayer = 1,#layerIds do
     weight = model_trained:get(layerIds[iLayer]).weight
     bias = model_trained:get(layerIds[iLayer]).bias
 

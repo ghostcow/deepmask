@@ -218,15 +218,12 @@ for iChunk = 1,trainData.numChunks do
               confusion:add(output[i], targets[i])
             end
 
-            -- normalize gradients and f(X)
-            gradParameters:div(numInputs)
-
             -- return f and df/dX
             return err,gradParameters
 	    end
 
 	    optimMethod(feval, parameters, optimState)
-        -- grabage collection after every batch (TODO : might be too expensive...)
+        -- grabage collection after every batch
         collectgarbage()
     end
 end

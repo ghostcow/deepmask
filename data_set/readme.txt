@@ -21,3 +21,22 @@ NOTE: in case more than one face is found the additional faces are saved as "[im
 
 * PubFig - not processed yet. (might have intersections with CFW/LFW)
 * Adience - not processed yet (images should be arranged into different folders per person)
+
+How to create dataset :
+(before running the following scripts you should change some paths inside them)
+1. Aligment :
+run img_preproc/AlignDataset.m, after changing relevent paths in the scripts
+
+2. Cleaning (running neral network which filter out bad samples) :
+data_set/clean_aligned_faces/CreateInput.m - create a txt file with the images to process ()
+data_set/clean_aligned_faces/ApplyFaceDetNetwork.lua - apply the network and produce output txt file
+data_set/clean_aligned_faces/ProcessResults.lua - move the images into output directory, grouped into different folders
+here manual filtering is needed...
+
+3. Create torch file :
+data_set/clean_aligned_faces/SaveDatasetPaths.m
+data_set/clean_aligned_faces/SaveDatasetImages.m
+data_set/clean_aligned_faces/ConcatDatasetFiles.m
+utils/mat2torch.lua
+
+
