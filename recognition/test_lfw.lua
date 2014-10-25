@@ -26,6 +26,8 @@ if (opt.modelName == 'model') then
     featureLayerIndex = 16
 elseif (opt.modelName =='model2') then
     featureLayerIndex = 12
+elseif (opt.modelName =='model_N4') then
+    featureLayerIndex = 12
 end
 
 ---Load LFW data and extract face feature -------------------------------------------------------------------

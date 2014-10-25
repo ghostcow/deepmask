@@ -203,7 +203,7 @@ for iChunk = 1,trainData.numChunks do
             -- evaluate function for complete mini batch
             -- estimate f
             local output = model:forward(inputs)
-            numInputs = inputs:size()[1]
+            local numInputs = inputs:size()[1]
             local err = criterion:forward(output, targets)
 
             -- f is the average of all criterions

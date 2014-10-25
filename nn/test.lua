@@ -39,6 +39,7 @@ function test()
 
 		-- get new sample
 		local inputs = testDataChunk.data[{{t,t+opt.batchSize-1}}]
+        local numInputs = inputs:size()[1]
 		inputs = inputs:cuda()
 		local targets = testDataChunk.labels[{{t,t+opt.batchSize-1}}]
 
