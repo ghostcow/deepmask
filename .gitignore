@@ -1,8 +1,5 @@
 *.mex
 *.mexw64
-/.idea
-results/
-CMakeFiles/*
 *.mat
 *.t7
 *~
@@ -10,12 +7,9 @@ CMakeFiles/*
 .project
 .buildpath
 *.zip
-data_set/clean_aligned_faces/data/
-data_set/clean_aligned_faces/train-a-face-detector/
-data_set/clean_aligned_faces/train-a-face-detector_NLL/
-data_set/clean_aligned_faces/train-a-face-detector_NLL_model2/
-data_set/clean_aligned_faces/train-a-face-detector_NLL_batch128/
-data_set/clean_aligned_faces/train-a-face-detector_NLL_gauss/
-data_set/clean_aligned_faces/train-a-face-detector_NLL_model2_batch128/
+/.idea
+CMakeFiles/*
 img_preproc/facedet/OpenCV_ViolaJones/CMakeFiles/
-
+results/
+data_files/
+images/

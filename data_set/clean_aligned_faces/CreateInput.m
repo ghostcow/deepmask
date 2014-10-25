@@ -1,7 +1,6 @@
-alignedImagesDir = '/media/data/datasets/CFW/filtered_aligned';
-filteredAlignedImagesDir = '/media/data/datasets/CFW/filtered_aligned_small';
-outputFilePath = 'data/images_unknown.txt';
-minImagesPerPerson = 42;
+alignedImagesDir = '/media/data/datasets/pubfig/aligned';
+outputFilePath = 'data/images_unknown_pubfig.txt';
+minImagesPerPerson = 5;
 
 %% iterate over the filtered figure dirs
 figDirs = dir(alignedImagesDir);
@@ -11,12 +10,6 @@ fid = fopen(outputFilePath, 'w');
 for iPerson = 1:nPersons
     fprintf('%d - %s\n', iPerson, figDirs(iPerson).name);
     imagesDir = fullfile(alignedImagesDir, figDirs(iPerson).name);
-    
-    % look for filtered image dir
-    filteredImagesDir = fullfile(filteredAlignedImagesDir, figDirs(iPerson).name);
-    if exist(filteredImagesDir, 'dir')
-        continue;
-    end
     
     % dir all images (not filtered)
     images = dir(fullfile(imagesDir, '*.jpg'));

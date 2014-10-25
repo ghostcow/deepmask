@@ -30,8 +30,9 @@ run img_preproc/AlignDataset.m, after changing relevent paths in the scripts
 2. Cleaning (running neral network which filter out bad samples) :
 data_set/clean_aligned_faces/CreateInput.m - create a txt file with the images to process ()
 data_set/clean_aligned_faces/ApplyFaceDetNetwork.lua - apply the network and produce output txt file
-data_set/clean_aligned_faces/ProcessResults.lua - move the images into output directory, grouped into different folders
+data_set/clean_aligned_faces/ProcessResults.m - move the images into output directory, grouped into different folders
 here manual filtering is needed...
+data_set/clean_aligned_faces/ArrangeFilteredResults.m - after the filtering is done run this script to arrange the images by persons
 
 3. Create torch file :
 data_set/clean_aligned_faces/SaveDatasetPaths.m
