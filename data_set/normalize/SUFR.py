@@ -11,7 +11,7 @@ def generate_image_to_identity_dict(info_file_path):
     image_to_ident = {}
     info_data = file(info_file_path).readlines()
     for i in xrange(len(info_data)):
-        ident = re.match("[0-9]* # ([a-zA-Z ,.'-]+)", info_data[i]).groups()[0]
+        ident = re.match("[0-9]* # ([a-zA-Z ,.'-_]+)", info_data[i]).groups()[0]
         # images are counted from 1
         image_to_ident[i+1] = ident.strip().replace(' ', '_')
 
