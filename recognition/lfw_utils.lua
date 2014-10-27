@@ -2,6 +2,7 @@ LfwUtils = {}
 
 LfwUtils.mainDir = '/media/data/datasets/LFW/lfw_aligned'
 LfwUtils.pairsFilePath = '/media/data/datasets/LFW/view2/pairs.txt'
+LfwUtils.peopleFilePath = '/media/data/datasets/LFW/view2/people.txt'
 
 function LfwUtils.loadPairs()
     -- return table with image pairs & indication of match/mismatch for each pair
@@ -69,6 +70,41 @@ function LfwUtils.loadPairs()
     end
     return pairsData
 end
+
+function LfwUtils.loadPeople()
+    --- return all image paths as an array
+    imagePaths = {}
+
+    numFolds = nil
+    currFoldSize = nil --- expected number of people in current fold
+    currFoldRead = 0 --- number of lines read in current fold
+    for line in io.lines(LfwUtils.peopleFilePath) do
+        if (numFolds == nil) then
+            --- first line
+            numFolds = tonumber(line)
+        elseif (currFoldSize == nil) then
+            --- new fold line
+            currFoldSize = tonumber(line)
+        else
+            --- during fold
+            local k = line:find('\t')
+            local personName = line:sub(1, k-1)
+            local numImages = tonumber(string.sub(line, k+1))
+            for iImage = 1,numImages do
+                imagePath = LfwUtils.getImagePath(personName, iImage)
+                table.insert(imagePaths, imagePath)
+            end
+            currFoldRead = currFoldRead + 1
+            if (currFoldRead == currFoldSize) then
+                --- starting new fold
+                currFoldSize = nil
+                currFoldRead = 0
+            end
+        end
+    end
+    return imagePaths
+end
+
 
 function LfwUtils.getImagePath(personName, personImgNum)
     imagePath = paths.concat(LfwUtils.mainDir, personName, string.format("%s_%04d.jpg", personName, personImgNum))

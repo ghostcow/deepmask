@@ -14,21 +14,16 @@ require 'ccn2'
 require 'mattorch'
 
 featureSize = 4096
-faceFeaturesPath = '/media/data/datasets/LFW/view2/pairs_features.t7'
-faceFeaturesMatPath = '/media/data/datasets/LFW/view2/pairs_features.mat'
+faceFeaturesPath = '/media/data/datasets/LFW/view2/pairs_features_'
 
 ---Load model -----------------------------------------------------------------------------------------------
 opt = getOptions()
+faceFeaturesPath = faceFeaturesPath..opt.save..'.mat'
+opt.save = paths.concat('../results/', opt.save)
 local state_file_path = paths.concat(opt.save, 'model.net')
 model = torch.load(state_file_path)
     -- TODO : load normFactors together with the model
-if (opt.modelName == 'model') then
-    featureLayerIndex = 16
-elseif (opt.modelName =='model2') then
-    featureLayerIndex = 12
-elseif (opt.modelName =='model_N4') then
-    featureLayerIndex = 12
-end
+featureLayerIndex = #(model.modules) - 3 -- last 3 layers : dropout, fully conected, log
 
 ---Load LFW data and extract face feature -------------------------------------------------------------------
 pairsData = LfwUtils.loadPairs()

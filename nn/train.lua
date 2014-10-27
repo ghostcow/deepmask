@@ -20,6 +20,7 @@ end
 ----------------------------------------------------------------------
 -- defining output paths
 local state_file_path = paths.concat(opt.save, 'model.net')
+local state_file_last_path = paths.concat(opt.save, 'model_last.net')
 local train_log_path = paths.concat(opt.save, 'train.log')
 local test_log_path = paths.concat(opt.save, 'test.log')
 
@@ -250,6 +251,7 @@ end
 
  -- save/log current net
  print('==> saving model & state to '..state_file_path)
+ os.rename(state_file_path, state_file_last_path)
  torch.save(state_file_path, model)
 
  -- next epoch

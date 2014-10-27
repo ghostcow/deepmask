@@ -21,6 +21,7 @@ function getOptions()
 	cmd:option('--plot', false, 'live plot')
     cmd:option('--balanceClasses', false, 'whether to use balance cost for classes in the NLL criterion')
     cmd:option('--freezeLayers', '', 'layers indices (seperated by comma) whose parameters will not be updated during training')
+    cmd:option('--trainOnly', false, 'whether to use all data for training (with no test phase at all)')
 
 	-- optimization parameters (same as Krizhevsky ImageNet)
 	cmd:option('--learningRate', 0.01, 'learning rate at t=0')
@@ -30,6 +31,7 @@ function getOptions()
 	cmd:option('--momentum', 0.9, 'momentum for SGD')
 	cmd:text()
 	opt = cmd:parse(arg or {})
+
     print('opt : ')
     print(opt)
 	return opt

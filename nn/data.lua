@@ -24,31 +24,51 @@ end
 
 trsize = data_set.train:size()[4]
 tesize = data_set.test:size()[4]
-trainDataInner = {
-	-- the original matlab format is nImages x 3 x height x width 
-	-- (where height=width=152)
-	-- but it's loaded into torch like this : width x height x 3 x nImages
 
-	data = data_set.train:transpose(1,4):transpose(2,3),
-	labels = data_set.trainLabels[1],
-	size = function() return trsize end
-	}
+if opt.trainOnly then
+    trainDataInner = {
+        -- the original matlab format is nImages x 3 x height x width
+        -- (where height=width=152)
+        -- but it's loaded into torch like this : width x height x 3 x nImages
 
-testDataInner = {
-	data = data_set.test:transpose(1,4):transpose(2,3),
-	labels = data_set.testLabels[1],
-	size = function() return tesize end
-}
+        data = torch.cat(data_set.train:transpose(1,4):transpose(2,3),
+            data_set.test:transpose(1,4):transpose(2,3), 1),
+        labels = torch.cat(data_set.trainLabels[1], data_set.testLabels[1]),
+        size = function() return (trsize+tesize) end
+        }
 
--- convert to our general dataset format
-trainData = {
-	numChunks = 1,
-	getChunk = function(iChunk) return trainDataInner end
-}
-testData = {
-	numChunks = 1,
-	getChunk = function(iChunk) return testDataInner end
-}
+    -- convert to our general dataset format
+    trainData = {
+        numChunks = 1,
+        getChunk = function(iChunk) return trainDataInner end
+    }
+else
+    trainDataInner = {
+        -- the original matlab format is nImages x 3 x height x width
+        -- (where height=width=152)
+        -- but it's loaded into torch like this : width x height x 3 x nImages
+
+        data = data_set.train:transpose(1,4):transpose(2,3),
+        labels = data_set.trainLabels[1],
+        size = function() return trsize end
+    }
+
+    testDataInner = {
+        data = data_set.test:transpose(1,4):transpose(2,3),
+        labels = data_set.testLabels[1],
+        size = function() return tesize end
+    }
+
+    -- convert to our general dataset format
+    trainData = {
+        numChunks = 1,
+        getChunk = function(iChunk) return trainDataInner end
+    }
+    testData = {
+        numChunks = 1,
+        getChunk = function(iChunk) return testDataInner end
+    }
+end
 
 -- classes - define classes array (used later for computing confusion matrix)
 nLabels = trainDataInner.labels:max()
@@ -74,6 +94,8 @@ if opt.visualize then
 
   local first100Samples_train = trainDataInner.data[{ {1,100} }]
   gfx.image(first100Samples_train, {legend='train - 100 samples'})
-  local first100Samples_test = testDataInner.data[{ {1,100} }]
-  gfx.image(first100Samples_test, {legend='test - 100 samples'})
+  if not opt.trainOnly then
+    local first100Samples_test = testDataInner.data[{ {1,100} }]
+    gfx.image(first100Samples_test, {legend='test - 100 samples'})
+  end
 end

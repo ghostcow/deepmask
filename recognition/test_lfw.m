@@ -1,4 +1,4 @@
-clear all; close all; clc;
+clear all variables; close all; clc;
 addpath('../../libsvm-3.18/matlab');
 addpath('../../liblinear-1.94/matlab');
 addpath('lior');
@@ -9,7 +9,11 @@ p = 2; % which p to use in Lp normalizarion
 numFolds = 10;
 numPairsPerFold = 300;
 classifierType = 'liblinear'; % options : libsvm / liblinear
+mode = 1; % 1 - restricted image configuration, 2 - unrestricted configuration
 
+% relvecant only for mode = 2, limit the number of pairs taken for the svm
+% training (for each of the 2 classes)
+numPairsForTrain = 100000;
 %% load data
 testData = load('testData.mat'); testData = testData.x;
 testData = shiftdim(testData, 2);
@@ -30,8 +34,11 @@ dataset = reshape(dataset, [featureDim, 2*nPairs]);
 datasetLeftFace = dataset(:, 1:2:(2*nPairs));
 datasetRightFace = dataset(:, 2:2:(2*nPairs));
 
-%% compute chisquare distances
-% chiSquaredDists = GetChiSquaredDists(dataset);
+if (mode == 2)
+    peopleMetadata = GetPeopleData();
+    peopleFeatures = load('lfw_people.mat');
+    peopleFeatures = peopleFeatures.x;
+end
 
 %% SVM classifying, cross-validation
 accuracies = zeros(1, numFolds);
@@ -39,18 +46,51 @@ for iTestFold = 1:numFolds
     testFoldStartIndex = 1 + (iTestFold - 1)*2*numPairsPerFold;
     
     testPairIndices = testFoldStartIndex:(testFoldStartIndex + 2*numPairsPerFold - 1);
-    trainPairIndices = setdiff(1:nPairs, testPairIndices);
-    
-    trainLabels = labels(trainPairIndices);
     testLabels = labels(testPairIndices);
+    
+    if (mode == 1)
+        % restricted image configuration
+        trainPairIndices = setdiff(1:nPairs, testPairIndices);
+        trainLabels = labels(trainPairIndices);
+        trainLeft = datasetLeftFace(:, trainPairIndices);
+        trainRight = datasetRightFace(:, trainPairIndices);
+    elseif (mode == 2)
+        % unrestricted configuration
+        trainFoldsIndices = setdiff(1:numFolds, iTestFold);
+        
+        pairsFilePath = sprintf('lfw_pairs_unrestricted_%d.mat', iTestFold);
+        if ~exist(pairsFilePath, 'file')
+            [trainPairIndices, trainLabels] = GetAllPairs(cell2mat(peopleMetadata(trainFoldsIndices)));
+        	save(pairsFilePath, 'trainPairIndices', 'trainLabels');
+        else
+            load(pairsFilePath, 'trainPairIndices', 'trainLabels');
+        end
+        locPos = find(trainLabels == 1);
+        locNeg = find(trainLabels == -1);        
+        numPos = sum(locPos);
+        numNeg = sum(locNeg);
+        numToTake = min([numPairsForTrain, numPos, numNeg]);
+
+        randIndices = randperm(length(locNeg)); randIndices = randIndices(1:numToTake); locNeg = locNeg(randIndices);
+        randIndices = randperm(length(locPos)); randIndices = randIndices(1:numToTake); locPos = locPos(randIndices);
+        
+        trainPairIndices = [trainPairIndices(locPos, :); trainPairIndices(locNeg, :)];
+        trainLabels = [trainLabels(locPos), trainLabels(locNeg)]';
+        
+        trainLeft = peopleFeatures(:, trainPairIndices(:, 1));
+        trainRight = peopleFeatures(:, trainPairIndices(:, 2));
+    end
+    
     %% normalization
     % transforming pair indices to features indices (for example pair 1
     % trasnfomrs into indices 1,2. pair 2 into 3,4. etc.)
-    trainLeft = datasetLeftFace(:, trainPairIndices);
-    trainRight = datasetRightFace(:, trainPairIndices);
+
     if useNormalization
         % 1. compute normalization factors based on training data
-        normFactors =  max([trainLeft trainRight], [], 2);
+        normFactors1 = max(trainLeft, [], 2);
+        normFactors2 = max(trainRight, [], 2);
+        normFactors =  max([normFactors1 normFactors2], [], 2);
+        normFactors(normFactors == 0) = inf;
         trainLeft = bsxfun(@times, trainLeft, 1./normFactors);
         trainRight = bsxfun(@times, trainRight, 1./normFactors);
         % 2. L2 normalization
@@ -66,7 +106,7 @@ for iTestFold = 1:numFolds
         weights = sum(bsxfun(@times, classifier.sv_coef, classifier.SVs));
         bias = -classifier.rho;
     elseif strcmp(classifierType, 'liblinear')
-        classifier = train(trainLabels, sparse(chiSquaredDistsTrain'), '-B 1'); % -s 3 -c 0.05 ?
+        classifier = train(trainLabels, sparse(chiSquaredDistsTrain'), '-B 1'); % -c 0.05 -s 1');
         weights = classifier.w(1:end-1);
         bias = classifier.w(end);
     else

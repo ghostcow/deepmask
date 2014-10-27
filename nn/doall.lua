@@ -3,7 +3,7 @@ require 'options'
 ----------------------------------------------------------------------
 print '==> processing options'
 opt = getOptions()
-
+opt.save = paths.concat('../results/', opt.save)
 -- nb of threads and fixed seed (for repeatable experiments)
 torch.setnumthreads(opt.threads)
 torch.manualSeed(opt.seed)
@@ -32,12 +32,16 @@ end
 
 dofile(opt.modelName..'.lua')
 dofile 'train.lua'
-dofile 'test.lua'
+if not opt.trainOnly then
+    dofile 'test.lua'
+end
 
 ----------------------------------------------------------------------
 print '==> training!'
 
 while true do
     train()
-    test()
+    if not opt.trainOnly then
+        test()
+    end
 end
