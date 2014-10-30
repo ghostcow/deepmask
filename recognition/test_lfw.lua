@@ -18,11 +18,10 @@ faceFeaturesPath = '/media/data/datasets/LFW/view2/pairs_features_'
 
 ---Load model -----------------------------------------------------------------------------------------------
 opt = getOptions()
-faceFeaturesPath = faceFeaturesPath..opt.save..'.mat'
+faceFeaturesPath = faceFeaturesPath..opt.save..'.t7'
 opt.save = paths.concat('../results/', opt.save)
 local state_file_path = paths.concat(opt.save, 'model.net')
 model = torch.load(state_file_path)
-    -- TODO : load normFactors together with the model
 featureLayerIndex = #(model.modules) - 3 -- last 3 layers : dropout, fully conected, log
 
 ---Load LFW data and extract face feature -------------------------------------------------------------------
@@ -34,22 +33,6 @@ if os.rename(faceFeaturesPath, faceFeaturesPath) then
 else
     faceFeatures = getFaceFeatures(imagePaths, model, featureLayerIndex)
     torch.save(faceFeaturesPath, faceFeatures)
-
-    --- save into mat file also
-    --- currently this saving fails for some reason
-    faceFeaturesMat = {}
-    for path,feature in pairs(faceFeatures) do
-        -- save only image name to get valid matlab variable
-        local pathCropeed = path:sub(#(LfwUtils.mainDir) + 2)
-        local k = pathCropeed:find('/')
-        pathCropeed = pathCropeed:sub(k+1, -5)
-        print(pathCropeed)
-
-        -- faceFeaturesMat[path] = feature:double()
-        faceFeaturesMat[pathCropeed] = feature:double()
-        -- table.insert(faceFeaturesMat, feature:double())
-    end
-    -- mattorch.save(faceFeaturesMatPath, faceFeaturesMat)
 end
 
 ---SVM train & test------------------------------------------------------------------------------------------

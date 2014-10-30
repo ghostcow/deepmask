@@ -77,8 +77,6 @@ for i=1,nLabels do
     table.insert(classes, tostring(i))
 end
 
-------preprocessing - ?
-
 ------visualizing data---------------------------
 if opt.visualize then
   require 'gfx.js'

@@ -13,6 +13,13 @@ print '==> defining test procedure'
 
 -- test function
 function test()
+   -- turn off dropout modules
+   for iModule = 1,#model.modules do
+      if (torch.type(model.modules[iModule]) == 'nn.Dropout') then
+         model.modules[iModule].train = false
+      end
+   end
+
    -- local vars
    local time = sys.clock()
 
@@ -58,14 +65,12 @@ function test()
    time = sys.clock() - time
    time = time / totalSize
    print("\n==> time to test 1 sample = " .. (time*1000) .. 'ms')
-   -- testLogger:add{['time to learn 1 sample'] = time*1000}
 
-   -- print confusion matrix
-   print(confusion)
+   -- print confusion matrix values
+   confusion:updateValids()
+   print("accuracy = ", confusion.totalValid * 100)
    local filename_confusion = paths.concat(opt.save, 'confusion_test')
    torch.save(filename_confusion, confusion)
-   
-   -- update log/plot
    testLogger:add{['% total accuracy'] = confusion.totalValid * 100, 
      ['% average accuracy'] = confusion.averageValid * 100}
    if opt.plot then
@@ -81,4 +86,11 @@ function test()
    
    -- next iteration:
    confusion:zero()
+
+   -- turn on dropout modules
+   for iModule = 1,#model.modules do
+      if (torch.type(model.modules[iModule]) == 'nn.Dropout') then
+         model.modules[iModule].train = true
+      end
+   end
 end

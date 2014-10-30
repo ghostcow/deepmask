@@ -10,18 +10,25 @@ require 'xlua'
 
 ---Load model -----------------------------------------------------------------------------------------------
 opt = getOptions()
+opt.save = paths.concat('../results/', opt.save)
 local state_file_path = paths.concat(opt.save, 'model.net')
 model = torch.load(state_file_path)
+for iModule = 1,#model.modules do
+    if (torch.type(model.modules[iModule]) == 'nn.Dropout') then
+        model.modules[iModule].train = false    
+    end
+end
 
 dofile 'data.lua'
 confusion = optim.ConfusionMatrix(classes)
 
-numInputTotal = 0
-numTrue = 0
-numTrueTop5 = 0
-
 -- test function
 function testTop5()
+    numInputTotal = 0
+    numTrue = 0
+    numTrueTop5 = 0
+    confusion:zero()
+
     -- local vars
     local time = sys.clock()
 
@@ -78,11 +85,11 @@ function testTop5()
     time = sys.clock() - time
     time = time / totalSize
     print("\n==> time to test 1 sample = " .. (time*1000) .. 'ms')
-    print("\n==> total accuracy = " .. numTrue/numInputTotal)
-    print("\n==> top5 accuracy = " .. numTrueTop5/numInputTotal)
 
-    -- next iteration:
-    -- confusion:zero()
+    confusion:updateValids()
+    print("\n==> total accuracy = " .. numTrue/numInputTotal)
+    print("\n==> total accuracy (confusion matrix) = " .. confusion.totalValid)
+    print("\n==> top5 accuracy = " .. numTrueTop5/numInputTotal)
 end
 
 testTop5()

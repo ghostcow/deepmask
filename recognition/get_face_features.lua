@@ -54,6 +54,14 @@ function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
         end
     end
 
+    --- first of all, turn off all dropout modules
+    for iModule = 1,#model.modules do
+        if (torch.type(model.modules[iModule]) == 'nn.Dropout') then
+            model.modules[iModule].train = false
+        end
+    end
+    
+    --- start processing
     faceFeatures = {}
     batchImagesPaths = {}
     if (mode == 1) then
