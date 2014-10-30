@@ -11,6 +11,7 @@ function getOptions()
 	cmd:option('--visualize', false, 'visualize input data and weights during training')
     cmd:option('--loadState', false, 'load exisiting state : pre-trained net and optimization parameters')
     cmd:option('--modelName', 'model', 'name of the model (network) to use - model/model2/model_clean_aligned_faces')
+    cmd:option('--patchIndex', 1, 'relevant for deepId only - index of the patch for training')
 
 	-- data:
 	cmd:option('--dataPath', '../data_files/CFW_flat/cfw_flat.t7', 'path to dataset file (mat or t7)')
