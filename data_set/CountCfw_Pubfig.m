@@ -1,10 +1,11 @@
 clc;
-clear all variables;
+% clear all variables;
 
 %% change paths here
 mainDirs = {'/media/data/datasets/CFW/filtered_aligned_network/byFigure', '/media/data/datasets/CFW/filtered_aligned_small', ...
     '/media/data/datasets/pubfig/aligned_clean_network_results/byFigure'};
-
+detectionsCfw = ParseDetectionsFile('/media/data/datasets/CFW/detections_CFW.txt');
+detectionsPubfig = ParseDetectionsFile('/media/data/datasets/pubfig/detections_pubfig.txt');
 isPubFig = [0 0 1];
 mapPubFigToCfw = '/media/data/datasets/pubfig/MapToCfwNames.csv';
 
@@ -54,12 +55,27 @@ for iDir = 1:length(mainDirs)
             iLabel = iLabel + 1;
         end
 
-        imagesDir = fullfile(mainDir, figDirs(iPerson).name);
+        imagesDir = fullfile(mainDir, personName);
         images = dir(fullfile(imagesDir, '*.jpg'));
-
         nImages = length(images);
         imagesCount(jLabel) = imagesCount(jLabel) + nImages;
-        % fprintf('%d - %s = %d\n', iPerson, figDirs(iPerson).name, nImages);
+        
+        % looking for the original image
+        for iImage = 1:nImages
+            key = fullfile(personName, images(iImage).name);
+            if isPubFig(iDir)
+                if ~isKey(detectionsPubfig, key)
+                    disp(key);
+                end                
+            else
+                % CFW
+                if ~isKey(detectionsCfw, key)
+                    disp(key);
+                end                     
+            end
+
+        end
+ 
     end
 end
 imagesCount(iLabel:end) = [];
