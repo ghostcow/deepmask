@@ -13,7 +13,7 @@ dlmwrite('landmarks_target.txt', landmarksTarget);
 %% align test image
 imPath = 'test.jpg';
 [detection, landmarks, aligned_imgs] = align_face(opts, imPath);
-
+imwrite(aligned_imgs{1}, 'test_aligned.jpg');
 figure; imshow(aligned_imgs{1}); hold on;
 for iLandmark = 1:size(landmarksTarget, 2)
     plot(landmarksTarget(1, iLandmark), landmarksTarget(2, iLandmark), 'r+');

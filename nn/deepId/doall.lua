@@ -27,7 +27,12 @@ print '==> executing all'
 patchIndex = opt.patchIndex
 dofile 'data_patch.lua'
 
-dofile('../model_deepID.lua')
+k = string.find(opt.modelName, '.', 1, true)
+if k then
+    modelFileName = opt.modelName:sub(1, k-1)
+end
+
+dofile('../'..modelFileName..'.lua')
 dofile('../train.lua')
 if not opt.trainOnly then
     dofile('../test.lua')

@@ -23,10 +23,11 @@ maxPoolingSize = 2
 maxPoolingStride = 2
 
 -- layers ids (except the multi-scale layer)
-layersIds = {C1=2,C2=5,C3=8, F6=12}
+layersIds = {C1=2,C2=5,C3=8,F6=12}
 multiScaleLayerId = 11
 -- F5 layer is divied into 2 parts in the multi scale layer
-multiScaleTrainableLayerIds = {{3}, {1,5}}
+multiScaleTrainableLayerIds = {{3}, {1,5} }
+
 ----------------------------------------------------------------------
 -- use -visualize to show network
 -- parse command line arguments
@@ -34,7 +35,20 @@ if not opt then
     print '==> processing options'
     opt = getOptions()
 end
+k = string.find(opt.modelName, '.', 1, true)
+if k then
+    subModelType = opt.modelName:sub(k+1) --- 3 = cutting the multi-scale layer (after M3)
+else
+    subModelType = 'full'
+end
+if (subModelType == '3') then
+    layersIds['F4'] = 13
+    layersIds['F5'] = 14
+    --- delete F6
+    layersIds['F6'] = nil
 
+    multiScaleLayerId = nil
+end
 ----------------------------------------------------------------------
 print '==> building model'
 
@@ -85,6 +99,7 @@ print(string.format('M3 : %dx%dx%dx%d@%dx%d',
 layerIndex = layerIndex + 1
 
 -- C4 layer (multi-scale) : 2 parallel branches
+if not (subModelType == '3') then
 multiScaleLayer = nn.Concat(2) -- first dimension is is batch, 2nd is the feature
 
 -- 1st branch : fully connected layer computing half of the feature
@@ -115,6 +130,12 @@ secondScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
 multiScaleLayer:add(secondScaleBranch)
 
 model:add(multiScaleLayer)
+elseif (subModelType == '3') then
+model:add(nn.Transpose({4,1},{4,2},{4,3}))
+local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
+model:add(nn.Reshape(outputSize, true))
+model:add(nn.Linear(outputSize, featureDim))
+end
 
 -- Final layer F6 - classification into class out of nLabels classses
 model:add(nn.Linear(featureDim, nLabels))
@@ -125,15 +146,19 @@ print(model)
 ----------------------------------------------------------------------
 print '==> initalizing weights'
 for _, layerId in pairs(layersIds) do
+    print(layerId)
     model:get(layerId).weight:normal(0, 0.01)
     model:get(layerId).bias:fill(0.5)
 end
-for iMultiScaleBranch = 1,2 do
-    local multiScaleLayerIds = multiScaleTrainableLayerIds[iMultiScaleBranch]
-    for iTrainableLayer = 1,#multiScaleLayerIds do
-        local layerId = multiScaleLayerIds[iTrainableLayer]
-        model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).weight:normal(0, 0.01)
-        model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).bias:fill(0.5)
+
+if multiScaleLayerId then
+    for iMultiScaleBranch = 1,2 do
+        local multiScaleLayerIds = multiScaleTrainableLayerIds[iMultiScaleBranch]
+        for iTrainableLayer = 1,#multiScaleLayerIds do
+            local layerId = multiScaleLayerIds[iTrainableLayer]
+            model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).weight:normal(0, 0.01)
+            model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).bias:fill(0.5)
+        end
     end
 end
 

@@ -1,7 +1,6 @@
 --- using pre-trained network to produce face features and test performance over the LFW benchmark
 -- NOTE : this script uses nn/options.lua to parse command line arguments, but actually 2 arguments are relevant :
 --      opt.save : path to results directory, where the network file will be loaded from
---      opt.modelName : the model name for the used network. used to determine the index of the face feature layer
 
 package.path = package.path .. ";../nn/?.lua"
 require 'lfw_utils'
@@ -19,8 +18,7 @@ faceFeaturesPath = '/media/data/datasets/LFW/view2/pairs_features_'
 ---Load model -----------------------------------------------------------------------------------------------
 opt = getOptions()
 faceFeaturesPath = faceFeaturesPath..opt.save..'.t7'
-opt.save = paths.concat('../results/', opt.save)
-local state_file_path = paths.concat(opt.save, 'model.net')
+local state_file_path = paths.concat('../results/'..opt.save, 'model.net')
 model = torch.load(state_file_path)
 featureLayerIndex = #(model.modules) - 3 -- last 3 layers : dropout, fully conected, log
 

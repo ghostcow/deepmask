@@ -77,6 +77,7 @@ end
 
 -- crop relevant patches
 print('cropping patch number ', opt.patchIndex)
+trainDataInnerOriginalData = torch.Tensor(trainDataInner.data:size()):copy(trainDataInner.data)
 if trainDataInner then
     trainDataInner.data = DeepIdUtils.getPatch(trainDataInner.data, opt.patchIndex)
 end
@@ -109,5 +110,15 @@ if opt.visualize then
     if not opt.trainOnly then
         local first100Samples_test = testDataInner.data[{ {1,100} }]
         gfx.image(first100Samples_test, {legend='test - 100 samples'})
+    end
+
+    --- gfx is buggy, so we will save images into files...
+    require 'image'
+    for iImage = 1,100 do
+        im = trainDataInner.data[iImage]
+        image.save('visualize/'..opt.patchIndex..'_'..iImage..'.jpg',im)
+
+        fullIm = trainDataInnerOriginalData[iImage]
+        image.save('visualize/'..'full_'..iImage..'.jpg',fullIm)
     end
 end

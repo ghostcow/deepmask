@@ -13,15 +13,16 @@ nImages = length(imagePaths);
 for iDetection = 1:nImages
     % cut aligned image path and save only [figure_name]/[image_name]
     alignedImagePath = alignedImagePaths{iDetection};
-    [temp, alignedImageName ext] = fileparts(alignedImagePath);
-    [temp, figureName] = fileparts(temp);
-    key = fullfile(figureName, [alignedImageName ext]);
+    [temp, alignedImageName, ext1] = fileparts(alignedImagePath);
+    [~, figureName, ext2] = fileparts(temp);
+    % NOTE : if the figure name has dots than it's considered as ext
+    key = fullfile([figureName ext2], [alignedImageName ext1]);
     
     % parse detections string
     detectionVec = sscanf(detectionsVecs{iDetection}, '%f %f %f %f');
     
     if isKey(detections, key)
-        disp(key);
+        fprintf('warninf - duplicate key = %s\n', key);
     end
     detections(key) = struct('path', imagePaths{iDetection}, 'detection', detectionVec);
 end
