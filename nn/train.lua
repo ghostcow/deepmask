@@ -84,7 +84,7 @@ if not opt.loadState then
     model:add(nn.LogSoftMax())
     model:cuda()
 else
-    print '==> loadind pre-trained net & optimization parameters'
+    print '==> loadind pre-trained network'
     model = torch.load(state_file_path)
     
    -- read new learning rate from opt
@@ -116,7 +116,7 @@ a = cutorch.getDeviceProperties(1)
 print('GPU free memory :'..tostring(a.freeGlobalMem))
 
 ----------------------------------------------------------------------
-if opt.freezeLayers then
+if not (opt.freezeLayers == '') then
     print '==> freeze some layers parameters during training'
     modules = model.modules
     shouldFreezeLayers = torch.LongTensor(#modules):fill(0)
@@ -164,7 +164,7 @@ local totalErr = 0
 local trainDataChunk
 for iChunk = 1,trainData.numChunks do
 	trainDataChunk = trainData.getChunk(iChunk)
-	local totalSize = totalSize + trainDataChunk:size()
+	totalSize = totalSize + trainDataChunk:size()
 	-- shuffle at each epoch
 	shuffle = torch.randperm(trainDataChunk:size())
 	for t = 1,trainDataChunk:size(),opt.batchSize do
@@ -218,7 +218,6 @@ for iChunk = 1,trainData.numChunks do
             for i=1,numInputs do
               confusion:add(output[i], targets[i])
             end
-
             -- return f and df/dX
             return err,gradParameters
 	    end
@@ -234,13 +233,12 @@ end
  time = time / totalSize
  print("\n==> time to learn 1 sample = " .. (time*1000) .. 'ms')
 
- -- print confusion matrix
- print(confusion)
+-- print confusion matrix  & error funstion values
+ confusion:updateValids()
+ print("accuracy = ", confusion.totalValid * 100)
  local filename_confusion = paths.concat(opt.save, 'confusion_train')
  torch.save(filename_confusion, confusion)
-
  print('Error = '..tostring(totalErr))
- -- update logger/plot
  trainLogger:add{['% total accuracy'] = confusion.totalValid * 100, 
      ['% average accuracy'] = confusion.averageValid * 100,
      ['cost function error'] = totalErr}

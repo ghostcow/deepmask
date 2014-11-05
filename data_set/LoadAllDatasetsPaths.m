@@ -1,0 +1,121 @@
+addpath(genpath('../img_preproc'));
+
+%% change paths here
+mainDirs = {'/media/data/datasets/CFW/filtered_aligned_network/byFigure', ...
+    '/media/data/datasets/CFW/filtered_aligned_small', ...
+    '/media/data/datasets/pubfig/aligned_clean_network_results/byFigure', ...
+    '/media/data/datasets/SUFR/byFigure', ...
+    '/media/data/datasets/missing_pubfig_cfw/aligned'};
+dirType = [1 1 2 3 4]; % 1 = CFW, 2 = PubFig, 3 = SUFR, 4 = Google
+detectionsFilePaths = {'/media/data/datasets/CFW/detections_CFW.txt', ...
+    '/media/data/datasets/CFW/detections_CFW.txt', ...
+    '/media/data/datasets/pubfig/detections_pubfig.txt', ...
+    '/media/data/datasets/SUFR/detections_SUFR.txt', ...
+    '/media/data/datasets/missing_pubfig_cfw/detections_missing_pubfig_cfw.txt'};
+
+if ~exist('dirIndices', 'var')
+    dirIndices = 1:length(mainDirs); % which dirs to use
+end
+mainDirs = mainDirs(dirIndices);
+dirType = dirType(dirIndices);
+detectionsFilePaths = detectionsFilePaths(dirIndices);
+
+%% Load metadata
+detections = cell(1, length(mainDirs));
+mapNames = cell(1, length(mainDirs));
+for iDir = 1:length(mainDirs)
+    detectionsTxtFilePath = detectionsFilePaths{iDir};
+    detectionsMatFilePath = [detectionsTxtFilePath(1:end-3) 'mat'];
+    if exist(detectionsMatFilePath, 'file')
+        % load save mat file
+        S = load(detectionsMatFilePath);
+        detections{iDir} = S.detections_;
+    else
+        detections_ = ParseDetectionsFile(detectionsTxtFilePath);
+        save(detectionsMatFilePath, 'detections_');
+        detections{iDir} = detections_;
+    end
+    
+    if (dirType(iDir) ~= 1) % not CFW
+        mapNamesFilePath = fullfile(fileparts(detectionsTxtFilePath), 'MapToCfwNames.csv');
+        mapNames{iDir} = ParseMapNamesFile(mapNamesFilePath);
+    end
+end
+
+%% read mapping file between pubfig name to cfw name
+nPersonsTot = 0;
+nImagesTot = 0;
+iLabel = 1;
+nameToLabelMap = containers.Map;
+imagePaths = cell(1, 1000);
+imagesCount = zeros(1, 1000);
+faceWidths = cell(1, 1000);
+for iDir = 1:length(mainDirs)
+    mainDir = mainDirs{iDir};
+    fprintf('%d : %s\n', iDir, mainDir);
+        
+    % start iterating
+    figDirs = dir(mainDir);
+    figDirs = figDirs(3:end);
+    nPersons = length(figDirs);
+    for iPerson = 1:nPersons
+        personName = figDirs(iPerson).name;
+        isExist = false;
+        if (dirType(iDir) ~= 1) % not CFW
+            if isKey(mapNames{iDir}, personName)
+                personName = mapNames{iDir}(personName);
+                isExist = isKey(nameToLabelMap, personName);
+            end
+        end
+        
+        if isExist
+            jLabel = nameToLabelMap(personName);
+        else
+            nameToLabelMap(personName) = iLabel;
+            imagePaths{iLabel} = {};
+            faceWidths{iLabel} = [];
+            imagesCount(iLabel) = 0;
+            jLabel = iLabel;
+            
+            iLabel = iLabel + 1;
+        end
+
+        imagesDir = fullfile(mainDir, figDirs(iPerson).name);
+        images = dir(fullfile(imagesDir, '*.jpg'));
+        nImages = length(images);
+        % looking for the original image
+        % sort paths by face resolution
+        for iImage = 1:nImages
+            key = fullfile(figDirs(iPerson).name, images(iImage).name);
+            if ~isKey(detections{iDir}, key)
+                disp(key);
+            else
+                currImageDetection = detections{iDir}(key);
+                
+                imagePaths{jLabel}{imagesCount(jLabel) + iImage} = ...
+                    fullfile(mainDir, figDirs(iPerson).name, images(iImage).name);
+                faceWidths{jLabel}(imagesCount(jLabel) + iImage) = ...
+                    currImageDetection.detection(3); % half-width of the face detected      
+            end
+        end
+        imagesCount(jLabel) = imagesCount(jLabel) + nImages;
+    end
+end
+imagesCount(iLabel:end) = [];
+imagePaths(iLabel:end) = [];
+faceWidths(iLabel:end) = [];
+
+% build map object between label and name
+personNames = nameToLabelMap.keys;
+nPersons = length(personNames);
+labelToNameMap = cell(1, nPersons);
+for iPerson = 1:length(personNames)
+   personName = personNames{iPerson};
+   labelToNameMap{nameToLabelMap(personName)} = personName;
+end
+
+minImages = 15;
+k = find(imagesCount < minImages);
+for iLabel = k
+    disp(labelToNameMap{iLabel});
+end

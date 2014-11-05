@@ -1,6 +1,6 @@
 ----------------------------------------------------------------------
 -- Deepface nn model for torch7
--- removing L4 & L6 to get shallower network
+-- removing L5 & L6 to get shallower network
 -- Input: (batchsize)X3X152X152
 -- Outout: 4030 vector (aka SFC ID)
 ----------------------------------------------------------------------
@@ -12,15 +12,15 @@ require 'image'
 require 'options'
 
 imageDim = 152
--- filter sizes for layers C1,C3,L5
-filtersSize = {11, 11, 7}
+-- filter sizes for layers C1,C3,L4
+filtersSize = {11, 9, 9, 7, 5}
 maxPoolingStride = 2
 maxPoolingSize = 3
-L5_stride = 4
--- number of output maps for layers C1,C3,L5
-numMaps = {32, 16, 16}
+L4_stride = 4
+-- number of output maps for layers C1,C3,L4,L5,L6
+numMaps = {32, 16, 16, 16, 16}
 -- layers id
-layersIds = {C1=2,C3=5,L5=7,F7=11,F8=14}
+layersIds = {C1=2,C3=5,L4=7,F7=12,F8=15}
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
@@ -74,13 +74,13 @@ print(string.format('C3 : %dx%dx%dx%d@%dx%d',
     numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
 layerIndex = layerIndex + 1
 
--- L5 layer
+-- L4 layer
 inputDim = numMaps[layerIndex - 1]
 inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex], L5_stride)) -- 8
+model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex], L4_stride)) -- 6
 model:add(nn.ReLU())
-outputMapDim = math.ceil((inputMapDim - filtersSize[layerIndex])/L5_stride) + 1
-print(string.format('L5 : %dx%dx%dx%d@%dx%d',
+outputMapDim = math.ceil((inputMapDim - filtersSize[layerIndex])/L4_stride) + 1
+print(string.format('L4 : %dx%dx%dx%d@%dx%d',
     numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
 layerIndex = layerIndex + 1
 
@@ -89,6 +89,7 @@ model:add(nn.Transpose({4,1},{4,2},{4,3}))
 -- transform the output into a vector
 local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
 model:add(nn.Reshape(outputSize, true))
+model:add(nn.Dropout(0.5))
 
 -- F7 layer
 model:add(nn.Linear(outputSize, 4096)) -- 14
@@ -108,13 +109,13 @@ for _, layerId in pairs(layersIds) do
     model:get(layerId).bias:fill(0.5)
 end
 
-
 if opt.visualize then
     require 'gfx.js'
     print '==> visualizing filters'
     for layerName, layerId in pairs(layersIds) do
         weights = model:get(layerId).weight
-        print(string.format('%s : %dx%d', layerName, weights:size()[1], weights:size()[2]))
+        print(string.format('%s : %dx%d = %d', layerName, weights:size()[1], weights:size()[2],
+            weights:size()[1]*weights:size()[2]))
         gfx.image(weights, {zoom=2, legend=layerName})
     end
 end

@@ -2,13 +2,14 @@
 % the images (randomized)
 
 % 
-maxImagesPerFile = 40000; %18000;
+useDifferentFiles = false;
 batchSize = 128;
 imSize = [152 152];
+maxImagesPerFile = 40000; % relevant only if useDifferentFiles=true
 
 %% change paths here
-inputFilePath = '../data/CFW_small/images';
-outputFilePathFormat = '../data_files/CFW_small/cfw_small';
+inputFilePath = '../data/deepId/CFW_small2/images';
+outputFilePathFormat = '../data_files/deepId/CFW_small2/cfw_small2';
 
 % input txt files
 inputFilePathTrain = [inputFilePath '_train.txt'];
@@ -17,6 +18,12 @@ inputFilePathTest = [inputFilePath '_test.txt'];
 %% 
 setTypes = {'train', 'test'};
 inputFilePaths = {inputFilePathTrain, inputFilePathTest};
+if ~useDifferentFiles
+    train = [];
+    trainLabels = [];
+    test = [];
+    testLabels = [];
+end
 
 for iSet = 1:2
     setType = setTypes{iSet};
@@ -59,7 +66,20 @@ for iSet = 1:2
             labels(jImage) = imageLabel;
             jImage = jImage + 1;
         end
-        save(outputFilePath, 'data', 'labels', '-v7.3');
+        if useDifferentFiles
+            save(outputFilePath, 'data', 'labels', '-v7.3');
+        else
+            if strcmp(setType, 'train')
+                train = cat(1, train, data);
+                trainLabels = cat(1, trainLabels, labels);
+            elseif strcmp(setType, 'test')
+                test = cat(1, test, data);
+                testLabels = cat(1, testLabels, labels);    
+            end
+        end
         iStart = iEnd + 1;
     end
+end
+if ~useDifferentFiles
+    save([outputFilePathFormat '.mat'], 'train', 'trainLabels', 'test', 'testLabels', '-v7.3');
 end

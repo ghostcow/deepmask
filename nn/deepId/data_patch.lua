@@ -1,4 +1,9 @@
+package.path = package.path .. ";../?.lua"
 require 'options'
+require 'deep_id_utils'
+
+-- NOTE : global var patchIndex (values = 1-5) should be assigned before calling this script
+-- TODO: maybe there is better way to pass this value (command line)
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
@@ -35,7 +40,7 @@ if opt.trainOnly then
             data_set.test:transpose(1,4):transpose(2,3), 1),
         labels = torch.cat(data_set.trainLabels[1], data_set.testLabels[1]),
         size = function() return (trsize+tesize) end
-        }
+    }
 
     -- convert to our general dataset format
     trainData = {
@@ -70,6 +75,16 @@ else
     }
 end
 
+-- crop relevant patches
+print('cropping patch number ', opt.patchIndex)
+trainDataInnerOriginalData = torch.Tensor(trainDataInner.data:size()):copy(trainDataInner.data)
+if trainDataInner then
+    trainDataInner.data = DeepIdUtils.getPatch(trainDataInner.data, opt.patchIndex)
+end
+if testDataInner then
+    testDataInner.data = DeepIdUtils.getPatch(testDataInner.data, opt.patchIndex)
+end
+
 -- classes - define classes array (used later for computing confusion matrix)
 nLabels = trainDataInner.labels:max()
 classes = {}
@@ -79,21 +94,31 @@ end
 
 ------visualizing data---------------------------
 if opt.visualize then
-  require 'gfx.js'
-  print '==> visualizing data'
-  if (require 'gnuplot') then
-	  gnuplot.figure(1)
-	  gnuplot.hist(trainDataInner.labels, trainDataInner.labels:max())
-	  gnuplot.title('#samples per label - training')
-	  gnuplot.figure(2)
-	  gnuplot.hist(testDataInner.labels, testDataInner.labels:max())
-	  gnuplot.title('#samples per label - test')
-  end
+    require 'gfx.js'
+    print '==> visualizing data'
+    if (require 'gnuplot') then
+        gnuplot.figure(1)
+        gnuplot.hist(trainDataInner.labels, trainDataInner.labels:max())
+        gnuplot.title('#samples per label - training')
+        gnuplot.figure(2)
+        gnuplot.hist(testDataInner.labels, testDataInner.labels:max())
+        gnuplot.title('#samples per label - test')
+    end
 
-  local first100Samples_train = trainDataInner.data[{ {1,100} }]
-  gfx.image(first100Samples_train, {legend='train - 100 samples'})
-  if not opt.trainOnly then
-    local first100Samples_test = testDataInner.data[{ {1,100} }]
-    gfx.image(first100Samples_test, {legend='test - 100 samples'})
-  end
+    local first100Samples_train = trainDataInner.data[{ {1,100} }]
+    gfx.image(first100Samples_train, {legend='train - 100 samples'})
+    if not opt.trainOnly then
+        local first100Samples_test = testDataInner.data[{ {1,100} }]
+        gfx.image(first100Samples_test, {legend='test - 100 samples'})
+    end
+
+    --- gfx is buggy, so we will save images into files...
+    require 'image'
+    for iImage = 1,100 do
+        im = trainDataInner.data[iImage]
+        image.save('visualize/'..opt.patchIndex..'_'..iImage..'.jpg',im)
+
+        fullIm = trainDataInnerOriginalData[iImage]
+        image.save('visualize/'..'full_'..iImage..'.jpg',fullIm)
+    end
 end

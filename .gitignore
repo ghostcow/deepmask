@@ -2,6 +2,7 @@
 *.mexw64
 *.mat
 *.t7
+*.jpg
 *~
 *.out
 .project

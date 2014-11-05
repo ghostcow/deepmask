@@ -56,14 +56,14 @@ model:add(nn.ReLU())
 outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
 print(string.format('C1 : %dx%dx%dx%d@%dx%d', 
 	numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
-layerIndex = layerIndex + 1
 
 -- M2 layer
 inputMapDim = outputMapDim
 model:add(ccn2.SpatialMaxPooling(maxPoolingSize, maxPoolingStride))
 outputMapDim = inputMapDim / maxPoolingStride
 print(string.format('M2 : %dx%dx%dx%d@%dx%d', 
-	numMaps[1], maxPoolingSize, maxPoolingSize, numMaps[1], outputMapDim, outputMapDim))
+	numMaps[layerIndex], maxPoolingSize, maxPoolingSize, numMaps[layerIndex], outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
 
 -- L3 layer
 inputDim = numMaps[layerIndex - 1]

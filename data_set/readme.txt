@@ -4,7 +4,7 @@ Each dataset folder should have these subfolders :
 	aligned - same as above, after face detection + alignment
 
 
-Datasets creation log : 
+-------------------------------- Datasets creation log : --------------------------------
 
 * CFW - This dataset was filtered after running different face detector than our.
         Thus, we run our detection+alignment process and saved only results intersecting with 
@@ -22,7 +22,8 @@ NOTE: in case more than one face is found the additional faces are saved as "[im
 * PubFig - not processed yet. (might have intersections with CFW/LFW)
 * Adience - not processed yet (images should be arranged into different folders per person)
 
-How to create dataset :
+-------------------------------- How to create dataset : --------------------------------
+
 (before running the following scripts you should change some paths inside them)
 1. Aligment :
 run img_preproc/AlignDataset.m, after changing relevent paths in the scripts
@@ -35,9 +36,8 @@ here manual filtering is needed...
 data_set/clean_aligned_faces/ArrangeFilteredResults.m - after the filtering is done run this script to arrange the images by persons
 
 3. Create torch file :
-data_set/clean_aligned_faces/SaveDatasetPaths.m
-data_set/clean_aligned_faces/SaveDatasetImages.m
-data_set/clean_aligned_faces/ConcatDatasetFiles.m
+data_set/clean_aligned_faces/SaveDatasetPaths.m (alternatively you can use SaveCombinedDatasetPaths to combing different datasets)
+data_set/clean_aligned_faces/SaveDatasetImages.m (useDifferentFiles = false in order to save all data into one file)
 utils/mat2torch.lua
 
 
