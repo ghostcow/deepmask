@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 2.8)
-project(OpenCV_ViolaJones)
-find_package(OpenCV REQUIRED)
-add_executable(OpenCV_ViolaJones OpenCV_ViolaJones.cpp)
-target_link_libraries(OpenCV_ViolaJones ${OpenCV_LIBS})
