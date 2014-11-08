@@ -3,7 +3,7 @@
 % If you are using a Windows machine, please use the basic convolution (fconv.cc).
 % This can be done by commenting out line 13 and uncommenting line 15 in
 % compile.m
-compile;
+% compile;
 
 % load and visualize model
 % Pre-trained model with 146 parts. Works best for faces larger than 80*80
