@@ -16,7 +16,8 @@ isOverWrite = true;
 
 %%
 figDirs = dir(allImagesDir);
-figDirs = figDirs(3:end);
+figDirs = figDirs([figDirs.isdir]); % clear all non dir files
+figDirs(strncmp({figDirs.name}, '.', 1)) = []; % clear . and .. from dir
 nPersons = length(figDirs);
 noFacesCounter = 0;
 
