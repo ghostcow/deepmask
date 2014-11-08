@@ -56,9 +56,7 @@ for iFigure = 1:nPersons
         
         if (nFaces == 1)
             imwrite(im2double(aligned_imgs{1}), alignedImagePath);   
-            fprintf(fid, '%s,%s,%d %d %d %d\n', imPath, alignedImagePath, ...
-                    detection(1, 1), detection(2, 1), ...
-                    detection(3, 1), detection(4, 1));  
+            log_detections(fid, imPath, alignedImagePath, detection(:, 1));
         else
             if useCenterFace
                 % look for the central face
@@ -68,19 +66,15 @@ for iFigure = 1:nPersons
                 dists = sqrt(sum(dists.^2));
                 [~, iCorrectFace] = min(dists);
                 
-                imwrite(im2double(aligned_imgs{iCorrectFace}), alignedImagePath);   
-                fprintf(fid, '%s,%s,%d %d %d %d\n', imPath, alignedImagePath, ...
-                        detection(1, iCorrectFace), detection(2, iCorrectFace), ...
-                        detection(3, iCorrectFace), detection(4, iCorrectFace));  
+                imwrite(im2double(aligned_imgs{iCorrectFace}), alignedImagePath); 
+                log_detections(fid, imPath, alignedImagePath, detection(:, iCorrectFace));
             else
                 % save all faces
                 for iFace = 1:nFaces
-                    alignedImagePath = fullfile(outputDir, ...
-                        [images(iImage).name(1:end-4) '.' num2str(iFace) '.jpg']);
+                    alignedImageName = [images(iImage).name(1:end-4) '.' num2str(iFace) '.jpg'];
+                    alignedImagePath = fullfile(outputDir, alignedImageName);
                     imwrite(im2double(aligned_imgs{iFace}), alignedImagePath);
-                    fprintf(fid, '%s,%s,%d %d %d %d\n', imPath, alignedImagePath, ...
-                                 detection(1, iFace), detection(2, iFace), ...
-                                 detection(3, iFace), detection(4, iFace));                   
+                    log_detections(fid, imPath, alignedImagePath, detection(:, iFace));                  
                 end
             end
         end
