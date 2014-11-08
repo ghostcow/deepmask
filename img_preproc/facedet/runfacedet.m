@@ -10,19 +10,11 @@ function DETS = runfacedet(I,imgpath)
 
     
     if size(boxes,2) > 0
-        T=zeros(size(boxes,2)+1,4);
-        T(1,1)=size(boxes,2);
-        T(2:end,:)=reshape(cell2mat(boxes),[4,size(boxes,2)])';
-        
-        widthVec=T(2:end,3);
-        heightVec=T(2:end,4);
-        T(2:end,3)=T(2:end,2);
-        T(2:end,4)=heightVec+T(2:end,3);
-        T(2:end,2)=widthVec+T(2:end,1);
-        
-        BB=T(2:end,:)';
-        DETS=[(BB(1,:)+BB(2,:))/2 ; (BB(3,:)+BB(4,:))/2 ; (BB(2,:)-BB(1,:))/2];
-        DETS(4,:)=1;
+        T=reshape(cell2mat(boxes),[4,size(boxes,2)]);
+        DETS=[T(1,:)+T(3,:)/2 ; 
+              T(2,:)+T(4,:)/2 ; 
+              T(3,:)/2 ; 
+              ones(1,size(T(2,:),2))];
     else
         DETS=[];
     end
