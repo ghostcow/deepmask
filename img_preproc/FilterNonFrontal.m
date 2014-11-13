@@ -12,7 +12,12 @@ for iImage = 1:length(images);
     bs = clipboxes(im, bs);
     bs = nms_face(bs,0.3);
 
-    if (~isempty(bs) && (0 == posemap(bs(1).c)))
+    if (isempty(bs))
         fprintf('%s\n', images(iImage).name);
+    else
+        pose = posemap(bs(1).c);
+        if (pose ~= 0)
+            fprintf('%s, pose=%d\n', images(iImage).name, pose);
+        end
     end
 end
