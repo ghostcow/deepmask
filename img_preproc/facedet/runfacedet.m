@@ -3,10 +3,14 @@ function DETS = runfacedet(I,imgpath)
     detectorConf=fullfile(root,'haarcascade_frontalface_alt.xml');
     
     detector = cv.CascadeClassifier(detectorConf);
-    gr = cv.cvtColor(I, 'RGB2GRAY');
+    if (size(I, 3) ~= 1)
+        gr = rgb2gray(I); %cv.cvtColor(I, 'RGB2GRAY');
+    else
+        gr = I;
+    end
     boxes = detector.detect(gr, ...
                             'ScaleFactor',  1.1, ...
-                            'MinNeighbors', 2, ...
+                            'MinNeighbors', 3, ...
                             'Flags', 1, ... % opencv CV_HAAR_DO_CANNY_PRUNING flag
                             'MinSize', [40, 40]);
 
