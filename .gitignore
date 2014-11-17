@@ -12,5 +12,6 @@
 CMakeFiles/*
 img_preproc/facedet/OpenCV_ViolaJones/CMakeFiles/
 results/
+results_deepid/
 data_files/
 images/

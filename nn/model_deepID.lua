@@ -18,12 +18,16 @@ featureDim = 160
 
 -- filter sizes & number of maps for layers C1,C2,C3,C4
 filtersSize = {4, 3, 3, 2}
-numMaps = {32, 48, 64, 80} -- NOTE: original paper uses {20, 40, 60, 80}
+--numMaps = {32, 48, 64, 80} -- NOTE: original paper uses {20, 40, 60, 80}
+--- NOTE : due to stablity issues (explosion of gradients) we use these maps & deepID.3.64 / deepID.3.160
+numMaps = {16, 32, 32, 48} -- NOTE: original paper uses {20, 40, 60, 80}
+-- also works : numMaps = {16, 16, 16, 16} & deepID.full.64
+
 maxPoolingSize = 2
 maxPoolingStride = 2
 
 -- layers ids (except the multi-scale layer)
-layersIds = {C1=2,C2=5,C3=8,F6=12}
+layersIds = {C1=2,C2=5,C3=8,F6=15}
 multiScaleLayerId = 11
 -- F5 layer is divied into 2 parts in the multi scale layer
 multiScaleTrainableLayerIds = {{3}, {1,5} }
@@ -38,12 +42,20 @@ end
 k = string.find(opt.modelName, '.', 1, true)
 if k then
     subModelType = opt.modelName:sub(k+1) --- 3 = cutting the multi-scale layer (after M3)
+    k = string.find(subModelType, '.', 1, true)
+    if k then
+        featureDim = tonumber(subModelType:sub(k+1))
+        subModelType = subModelType:sub(1, k-1)
+
+        print(subModelType)
+        print(featureDim)
+    end
 else
     subModelType = 'full'
 end
 if (subModelType == '3') then
     layersIds['F4'] = 13
-    layersIds['F5'] = 14
+    layersIds['F5'] = 15
     --- delete F6
     layersIds['F6'] = nil
 
@@ -99,7 +111,7 @@ print(string.format('M3 : %dx%dx%dx%d@%dx%d',
 layerIndex = layerIndex + 1
 
 -- C4 layer (multi-scale) : 2 parallel branches
-if not (subModelType == '3') then
+if (subModelType == 'full') then
 multiScaleLayer = nn.Concat(2) -- first dimension is is batch, 2nd is the feature
 
 -- 1st branch : fully connected layer computing half of the feature
@@ -108,6 +120,7 @@ firstScaleBranch = nn.Sequential()
 firstScaleBranch:add(nn.Transpose({4,1},{4,2},{4,3}))
 local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
 firstScaleBranch:add(nn.Reshape(outputSize, true))
+--firstScaleBranch:add(nn.View(-1):setNumInputDims(2))
 firstScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
 multiScaleLayer:add(firstScaleBranch)
 
@@ -126,6 +139,7 @@ layerIndex = layerIndex + 1
 secondScaleBranch:add(nn.Transpose({4,1},{4,2},{4,3}))
 local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
 secondScaleBranch:add(nn.Reshape(outputSize, true))
+-- secondScaleBranch:add(nn.View(-1):setNumInputDims(2))
 secondScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
 multiScaleLayer:add(secondScaleBranch)
 
@@ -133,11 +147,30 @@ model:add(multiScaleLayer)
 elseif (subModelType == '3') then
 model:add(nn.Transpose({4,1},{4,2},{4,3}))
 local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
-model:add(nn.Reshape(outputSize, true))
+-- model:add(nn.Reshape(outputSize, true))
+model:add(nn.View(-1, outputSize):setNumInputDims(2))
+model:add(nn.Linear(outputSize, featureDim))
+elseif (subModelType == '1scale') then
+inputDim = numMaps[layerIndex - 1]
+inputMapDim = outputMapDim
+model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex]))
+model:add(nn.ReLU())
+outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
+print(string.format('C4 : %dx%dx%dx%d@%dx%d',
+    numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+layerIndex = layerIndex + 1
+
+-- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
+model:add(nn.Transpose({4,1},{4,2},{4,3}))
+local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
+model:add(nn.View(-1, outputSize):setNumInputDims(2))
 model:add(nn.Linear(outputSize, featureDim))
 end
+model:add(nn.ReLU()) --activation function for the previous fully-connected layer
+
 
 -- Final layer F6 - classification into class out of nLabels classses
+model:add(nn.Dropout())
 model:add(nn.Linear(featureDim, nLabels))
 
 print '==> here is the model:'
@@ -145,6 +178,7 @@ print(model)
 
 ----------------------------------------------------------------------
 print '==> initalizing weights'
+if false then
 for _, layerId in pairs(layersIds) do
     print(layerId)
     model:get(layerId).weight:normal(0, 0.01)
@@ -160,6 +194,9 @@ if multiScaleLayerId then
             model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).bias:fill(0.5)
         end
     end
+end
+else
+print 'using default layers initialization!'
 end
 
 if opt.visualize then

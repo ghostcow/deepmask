@@ -3,12 +3,48 @@
 --
 -- Uses CUDA
 ----------------------------------------------------------------------
-
+require 'math'
 require 'torch'
 require 'nn'
 require 'xlua'
 require 'optim'
 require 'options'
+
+function isnan(x)
+    -- nan is the only number not equal to itself
+    if (x ~= x) then
+        return 1
+    else
+        return 0
+    end
+end
+function isinf(x)
+    -- nan is the only number not equal to itself
+    if (x == math.huge) then
+        return 1
+    else
+        return 0
+    end
+end
+function isValid(tensor)
+    local z1 = tensor:clone():abs()
+    local z2 = tensor:clone():abs()
+
+    z1:apply(isnan) -- check for nan's
+    z2:apply(isinf) -- check for inf
+    return ((z1:sum() + z2:sum()) == 0)
+end
+
+useAssert = true
+function MyAssert(condition, message)
+    if useAssert then
+        -- real assert
+        assert(condition, message)
+    else
+        -- fake assert just print warning message
+        if not condition then print(message) end
+    end
+end
 
 ----------------------------------------------------------------------
 -- parse command line arguments
@@ -34,7 +70,12 @@ optimState = {
            weightDecay = opt.weightDecay,
            momentum = opt.momentum,
            learningRateDecay = opt.learningRateDecay
-           }
+}
+if (opt.nesterov) then
+    optimState.nesterov = true
+    optimState.dampening = 0
+end
+
 print '==> configuring optimizer - SGD'           
 optimMethod = optim.sgd
 print '==> defining cost function to NLL'
@@ -164,46 +205,64 @@ local totalErr = 0
 local trainDataChunk
 for iChunk = 1,trainData.numChunks do
 	trainDataChunk = trainData.getChunk(iChunk)
-	totalSize = totalSize + trainDataChunk:size()
+    chunkSize = trainDataChunk:size()
+	totalSize = totalSize + chunkSize
 	-- shuffle at each epoch
-	shuffle = torch.randperm(trainDataChunk:size())
-	for t = 1,trainDataChunk:size(),opt.batchSize do
+	shuffle = torch.randperm(chunkSize)
+	for t = 1,chunkSize,opt.batchSize do
 	    -- disp progress
-	    xlua.progress(t, trainDataChunk:size())
+	    xlua.progress(t, chunkSize)
 
 	    -- create mini batch
 	    local inputs = torch.Tensor(opt.batchSize, 3, imageDim, imageDim)
 	    local targets = torch.Tensor(opt.batchSize)
-	    if ((t+opt.batchSize-1) > trainDataChunk:size()) then
+	    if ((t+opt.batchSize-1) > chunkSize) then
 	      -- we don't use the last samples
 	      break
 	    end
 	    for i = t,(t+opt.batchSize-1) do
-            inputs[{i-t+1}] = trainDataChunk.data[shuffle[i]]
-            targets[{i-t+1}] = trainDataChunk.labels[shuffle[i]]
+            -- apply mod operator, in order to complete last batch with first samples
+            inputs[{i-t+1}] = trainDataChunk.data[shuffle[1 + (i-1)%chunkSize]]
+            targets[{i-t+1}] = trainDataChunk.labels[shuffle[1 + (i-1)%chunkSize]]
 	    end
 	    -- NOTE: we suppport training on CUDA only
         --a = cutorch.getDeviceProperties(1)
         collectgarbage()
         --print('GPU free memory :'..tostring(a.freeGlobalMem / a.totalGlobalMem))
-        --print(inputs:size())
+        -- print(inputs:size())
 	    inputs = inputs:cuda()
 
 	    -- create closure to evaluate f(X) and df/dX
 	    local feval = function(x)
             -- get new parameters
             if x ~= parameters then
-                print('DEBUG')
                 print(parameters:size())
                 parameters:copy(x)
             end
+            MyAssert(isValid(parameters), "non-valid model parameters")
 
             -- reset gradients
             gradParameters:zero()
 
             -- evaluate function for complete mini batch
             -- estimate f
+            MyAssert(isValid(inputs), "there are some nan's in inputs")
             local output = model:forward(inputs)
+            if (not isValid(output)) then
+                -- invalid output
+                local midInput = inputs:clone()
+                local midOutput
+                for iLayer = 1,#(model.modules) do
+                    midOutput = model:get(iLayer):forward(midInput)
+                    if not isValid(midOutput) then
+                        --print(iLayer, midOutput:size())
+                        --print(midOutput[{{},1}])
+                        MyAssert(false, "there are some nan's in output")
+                    end
+                    midInput = midOutput
+                end
+            end
+
             local numInputs = inputs:size()[1]
             local err = criterion:forward(output, targets)
 
@@ -212,17 +271,30 @@ for iChunk = 1,trainData.numChunks do
 
             -- estimate df/dW
             local df_do = criterion:backward(output, targets)
+            if (not isValid(df_do)) then
+                print 'after criterion:backward - non-valid model df_do'
+                -- df_do:zero()
+            end
+
             model:backward(inputs, df_do)
+
+            if (not isValid(gradParameters)) then
+                print(err)
+                print 'after model:backward - non-valid model gradParameters'
+                -- gradParameters:zero()
+            end
 
             -- update confusion
             for i=1,numInputs do
               confusion:add(output[i], targets[i])
             end
+
             -- return f and df/dX
             return err,gradParameters
 	    end
 
 	    optimMethod(feval, parameters, optimState)
+
         -- grabage collection after every batch
         collectgarbage()
     end
@@ -246,6 +318,10 @@ end
      trainLogger:style{['% total accuracy'] = '-'}
      trainLogger:plot()
  end
+
+ -- check all model parameters validity
+ MyAssert(isValid(parameters), "non-valid model parameters")
+ MyAssert(isValid(gradParameters), "non-valid model gradParameters")
 
  -- save/log current net
  print('==> saving model & state to '..state_file_path)

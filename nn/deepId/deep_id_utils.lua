@@ -1,9 +1,11 @@
 require 'image'
+require 'paths'
 function round(num) return math.floor(num+.5) end
+currFileDir = paths.dirname(debug.getinfo(1,'S').source:sub(2))
 
 DeepIdUtils = {}
 
-DeepIdUtils.landmarksPath = '../../img_preproc/landmarks_target.txt'
+DeepIdUtils.landmarksPath = paths.concat(currFileDir, '../../img_preproc/landmarks_target.txt')
 -- currently we support only one scale & square rgb patch
 -- TODO : support 15 different patches for 3 scales
 -- scale = 1 : 5 31x31, 4 31x39, 1 ?x47
@@ -39,6 +41,8 @@ DeepIdUtils.patchCenters[{{},{3}}] = (DeepIdUtils.landmarksLocs[{{},{5}}] + Deep
 DeepIdUtils.patchCenters[{{},{4}}] = DeepIdUtils.landmarksLocs[{{},{8}}]
 -- patch no. 5 : right lip edge
 DeepIdUtils.patchCenters[{{},{5}}] = DeepIdUtils.landmarksLocs[{{},{9}}]
+-- map each index to the one that has to be flipped in order to get more data
+DeepIdUtils.patchFlippedIndices = {2,1,3,5,4}
 
 DeepIdUtils.patchBordes = torch.Tensor(4, DeepIdUtils.numPatches)
 for iPatch = 1,DeepIdUtils.numPatches do
@@ -71,22 +75,47 @@ for iPatch = 1,DeepIdUtils.numPatches do
     DeepIdUtils.patchBordes[{{},{iPatch}}] = torch.Tensor({y0,y1,x0,x1})
 end
 
-function DeepIdUtils.getPatch(images, patchIndex)
+function DeepIdUtils.getPatch(images, patchIndex, useFlipped)
     -- images : tensor of format nImages x 3 x height x width
     -- patchIndex : indicating the requested patch (1-5)
 
     patchBorders = DeepIdUtils.patchBordes[{{},patchIndex}]
 
-    -- crop patch entered in center
+    -- crop patches centered in center
     patches = images[{{},{},{patchBorders[1], patchBorders[2]},
         {patchBorders[3], patchBorders[4]}}]
 
     -- resize patches to DeepIdUtils.patchSizeTarget
     nImages = images:size(1)
-    patchesResized = torch.Tensor(nImages, images:size(2), DeepIdUtils.patchSizeTarget, DeepIdUtils.patchSizeTarget)
+    nChannels = images:size(2)
+    local patchesResized = torch.Tensor(nImages, nChannels, DeepIdUtils.patchSizeTarget, DeepIdUtils.patchSizeTarget)
     for iImage = 1,nImages do
         patchesResized[iImage] = image.scale(patches[iImage], DeepIdUtils.patchSizeTarget)
     end
 
-    return patchesResized
+    local flipeedPatchResized
+    local patchesResizedTotal
+    -- data augmentation : using flipped patches also
+    if useFlipped then
+        patchFlippedIndex = DeepIdUtils.patchFlippedIndices[patchIndex]
+        if (patchFlippedIndex == patchIndex) then
+            -- using the same patch
+            flipeedPatchResized = patchesResized:clone()
+        else
+            flipeedPatchResized = DeepIdUtils.getPatch(images, patchFlippedIndex, false)
+        end
+        -- no we will do the actual flipping
+        for iImage = 1,nImages do
+            flipeedPatchResized[iImage] = image.hflip(flipeedPatchResized[iImage])
+        end
+
+        -- fill into the output tensor
+        patchesResizedTotal = torch.Tensor(2*nImages, nChannels, DeepIdUtils.patchSizeTarget, DeepIdUtils.patchSizeTarget)
+        patchesResizedTotal[{{1, nImages}}] = patchesResized
+        patchesResizedTotal[{{nImages+1, 2*nImages}}] = flipeedPatchResized
+    else
+        patchesResizedTotal = patchesResized
+    end
+
+    return patchesResizedTotal
 end

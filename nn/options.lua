@@ -12,6 +12,7 @@ function getOptions()
     cmd:option('--loadState', false, 'load exisiting state : pre-trained net and optimization parameters')
     cmd:option('--modelName', 'model', 'name of the model (network) to use - model/model2/model_clean_aligned_faces')
     cmd:option('--patchIndex', 1, 'relevant for deepId only - index of the patch for training')
+    cmd:option('--debugOnly', false, 'if true, no trainig-testing is done and everthing is just loaded')
 
 	-- data:
 	cmd:option('--dataPath', '../data_files/CFW_flat/cfw_flat.t7', 'path to dataset file (mat or t7)')
@@ -30,7 +31,9 @@ function getOptions()
 	cmd:option('--batchSize', 128, 'mini-batch size (1 = pure stochastic)')
 	cmd:option('--weightDecay', 5e-4, 'weight decay for SGD')
 	cmd:option('--momentum', 0.9, 'momentum for SGD')
-	cmd:text()
+    cmd:option('--nesterov', false, 'whether to use nesterov momentum')
+
+    cmd:text()
 	opt = cmd:parse(arg or {})
 
     print('opt : ')

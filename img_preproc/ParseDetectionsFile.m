@@ -17,6 +17,8 @@ for iDetection = 1:nImages
     [~, figureName, ext2] = fileparts(temp);
     % NOTE : if the figure name has dots than it's considered as ext
     key = fullfile([figureName ext2], [alignedImageName ext1]);
+    % convert ' ' to '_'
+    key = strrep(key, ' ', '_');
     
     % parse detections string
     detectionVec = sscanf(detectionsVecs{iDetection}, '%f %f %f %f');
@@ -24,7 +26,8 @@ for iDetection = 1:nImages
     if isKey(detections, key)
         fprintf('warninf - duplicate key = %s\n', key);
     end
-    detections(key) = struct('path', imagePaths{iDetection}, 'detection', detectionVec);
+    detections(key) = struct('path', strrep(imagePaths{iDetection}, ' ', '_'), ...
+        'detection', detectionVec);
 end
 
 fclose(fid);

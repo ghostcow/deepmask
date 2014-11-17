@@ -26,6 +26,7 @@ function peopleMetadata = GetPeopleData(filePath)
             personName = line(1:(k-1));
             numImages = str2double(line((k+1):end));
             iFoldPerson = iFoldPerson + 1;
+            currFold(iFoldPerson).name = personName;
             currFold(iFoldPerson).numImages = numImages;
             currFold(iFoldPerson).imageIndices = iImage:(iImage + numImages - 1);
             iImage = iImage + numImages;

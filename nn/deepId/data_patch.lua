@@ -2,9 +2,6 @@ package.path = package.path .. ";../?.lua"
 require 'options'
 require 'deep_id_utils'
 
--- NOTE : global var patchIndex (values = 1-5) should be assigned before calling this script
--- TODO: maybe there is better way to pass this value (command line)
-
 ----------------------------------------------------------------------
 -- use -visualize to show network
 -- parse command line arguments
@@ -39,7 +36,6 @@ if opt.trainOnly then
         data = torch.cat(data_set.train:transpose(1,4):transpose(2,3),
             data_set.test:transpose(1,4):transpose(2,3), 1),
         labels = torch.cat(data_set.trainLabels[1], data_set.testLabels[1]),
-        size = function() return (trsize+tesize) end
     }
 
     -- convert to our general dataset format
@@ -55,13 +51,11 @@ else
 
         data = data_set.train:transpose(1,4):transpose(2,3),
         labels = data_set.trainLabels[1],
-        size = function() return trsize end
     }
 
     testDataInner = {
         data = data_set.test:transpose(1,4):transpose(2,3),
         labels = data_set.testLabels[1],
-        size = function() return tesize end
     }
 
     -- convert to our general dataset format
@@ -77,13 +71,29 @@ end
 
 -- crop relevant patches
 print('cropping patch number ', opt.patchIndex)
-trainDataInnerOriginalData = torch.Tensor(trainDataInner.data:size()):copy(trainDataInner.data)
+if opt.visualize then
+    trainDataInnerOriginalData = trainDataInner.data:clone()
+end
+
+useFlippedPatches = true
 if trainDataInner then
-    trainDataInner.data = DeepIdUtils.getPatch(trainDataInner.data, opt.patchIndex)
+    trainDataInner.data = DeepIdUtils.getPatch(trainDataInner.data, opt.patchIndex, useFlippedPatches)
+    if useFlippedPatches then
+        -- replicate labels
+        trainDataInner.labels = torch.cat(trainDataInner.labels, trainDataInner.labels)
+    end
 end
+
 if testDataInner then
-    testDataInner.data = DeepIdUtils.getPatch(testDataInner.data, opt.patchIndex)
+    -- TODO : should we add flipped patches to test set also ?
+    testDataInner.data = DeepIdUtils.getPatch(testDataInner.data, opt.patchIndex, useFlippedPatches)
+    if useFlippedPatches then
+        -- replicate labels
+        testDataInner.labels = torch.cat(testDataInner.labels, testDataInner.labels)
+    end
 end
+trainDataInner.size = function() return trainDataInner.data:size(1) end
+testDataInner.size = function() return testDataInner.data:size(1) end
 
 -- classes - define classes array (used later for computing confusion matrix)
 nLabels = trainDataInner.labels:max()
@@ -94,6 +104,7 @@ end
 
 ------visualizing data---------------------------
 if opt.visualize then
+    nSamples = 100
     require 'gfx.js'
     print '==> visualizing data'
     if (require 'gnuplot') then
@@ -105,19 +116,30 @@ if opt.visualize then
         gnuplot.title('#samples per label - test')
     end
 
-    local first100Samples_train = trainDataInner.data[{ {1,100} }]
-    gfx.image(first100Samples_train, {legend='train - 100 samples'})
+    local firstSamplesTrain
+    if useFlippedPatches then
+        firstSamplesTrain = torch.Tensor(2*nSamples, trainDataInner.data:size(2),
+            trainDataInner.data:size(3), trainDataInner.data:size(4))
+        firstSamplesTrain[{{1, nSamples}}] = trainDataInner.data[{ {1,nSamples} }]
+        firstSamplesTrain[{{nSamples+1, 2*nSamples}}] =
+            trainDataInner.data[{ {trainDataInner:size()/2 + 1,trainDataInner:size()/2 + nSamples} }]
+    else
+        firstSamplesTrain = trainDataInner.data[{ {1,nSamples} }]
+    end
+
+    gfx.image(firstSamplesTrain, {legend='train - samples'})
     if not opt.trainOnly then
-        local first100Samples_test = testDataInner.data[{ {1,100} }]
+        local first100Samples_test = testDataInner.data[{ {1,nSamples} }]
         gfx.image(first100Samples_test, {legend='test - 100 samples'})
     end
 
     --- gfx is buggy, so we will save images into files...
     require 'image'
-    for iImage = 1,100 do
-        im = trainDataInner.data[iImage]
+    for iImage = 1,firstSamplesTrain:size(1) do
+        im = firstSamplesTrain[iImage]
         image.save('visualize/'..opt.patchIndex..'_'..iImage..'.jpg',im)
-
+    end
+    for iImage = 1,firstSamplesTrain:size(1) do
         fullIm = trainDataInnerOriginalData[iImage]
         image.save('visualize/'..'full_'..iImage..'.jpg',fullIm)
     end

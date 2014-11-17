@@ -5,13 +5,15 @@ mainDirs = {'/media/data/datasets/CFW/filtered_aligned_network/byFigure', ...
     '/media/data/datasets/CFW/filtered_aligned_small', ...
     '/media/data/datasets/pubfig/aligned_clean_network_results/byFigure', ...
     '/media/data/datasets/SUFR/byFigure', ...
-    '/media/data/datasets/missing_pubfig_cfw/aligned'};
-dirType = [1 1 2 3 4]; % 1 = CFW, 2 = PubFig, 3 = SUFR, 4 = Google
+    '/media/data/datasets/missing_pubfig_cfw/aligned', ...
+    '/media/data/datasets/missing_sufr/aligned'};
+dirType = [1 1 2 3 4 5]; % 1 = CFW, 2 = PubFig, 3 = SUFR, 4 = Google_CFW, 5 = Google_SUFR
 detectionsFilePaths = {'/media/data/datasets/CFW/detections_CFW.txt', ...
     '/media/data/datasets/CFW/detections_CFW.txt', ...
     '/media/data/datasets/pubfig/detections_pubfig.txt', ...
     '/media/data/datasets/SUFR/detections_SUFR.txt', ...
-    '/media/data/datasets/missing_pubfig_cfw/detections_missing_pubfig_cfw.txt'};
+    '/media/data/datasets/missing_pubfig_cfw/detections_missing_pubfig_cfw.txt', ...
+    '/media/data/datasets/missing_sufr/detections_missing_sufr.txt'};
 
 if ~exist('dirIndices', 'var')
     dirIndices = 1:length(mainDirs); % which dirs to use
@@ -36,8 +38,8 @@ for iDir = 1:length(mainDirs)
         detections{iDir} = detections_;
     end
     
-    if (dirType(iDir) ~= 1) % not CFW
-        mapNamesFilePath = fullfile(fileparts(detectionsTxtFilePath), 'MapToCfwNames.csv');
+    mapNamesFilePath = fullfile(fileparts(detectionsTxtFilePath), 'MapToCfwNames.csv');
+    if (exist(mapNamesFilePath, 'file')) % mapping names file exists
         mapNames{iDir} = ParseMapNamesFile(mapNamesFilePath);
     end
 end
@@ -47,9 +49,9 @@ nPersonsTot = 0;
 nImagesTot = 0;
 iLabel = 1;
 nameToLabelMap = containers.Map;
-imagePaths = cell(1, 1000);
-imagesCount = zeros(1, 1000);
-faceWidths = cell(1, 1000);
+imagePaths = cell(1, 1500);
+imagesCount = zeros(1, 1500);
+faceWidths = cell(1, 1500);
 for iDir = 1:length(mainDirs)
     mainDir = mainDirs{iDir};
     fprintf('%d : %s\n', iDir, mainDir);
@@ -60,14 +62,13 @@ for iDir = 1:length(mainDirs)
     nPersons = length(figDirs);
     for iPerson = 1:nPersons
         personName = figDirs(iPerson).name;
-        isExist = false;
-        if (dirType(iDir) ~= 1) % not CFW
+        if (~isempty(mapNames{iDir})) % names mapping file exists
             if isKey(mapNames{iDir}, personName)
                 personName = mapNames{iDir}(personName);
-                isExist = isKey(nameToLabelMap, personName);
             end
         end
         
+        isExist = isKey(nameToLabelMap, personName);
         if isExist
             jLabel = nameToLabelMap(personName);
         else
@@ -115,6 +116,7 @@ for iPerson = 1:length(personNames)
 end
 
 minImages = 15;
+fprintf('peoples with less than %d images:\n', minImages);
 k = find(imagesCount < minImages);
 for iLabel = k
     disp(labelToNameMap{iLabel});

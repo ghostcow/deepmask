@@ -42,16 +42,18 @@ else
     weightstring = '';
 end
 
-basicstring = sprintf('-q -s %d ', sPARAMS.type);
+% -B 1 = using bias term
+basicstring = sprintf('-B 1 -q -s %d ', sPARAMS.type);
 
 paramstring = [basicstring cstring weightstring ...
                sPARAMS.additionalstring];
-Model.svmmodel = train(Ytrain,sparse(Xtrain),paramstring);
-
+Model.svmmodel = train(Ytrain,sparse(Xtrain), paramstring);
+Model.svmmodel.weights = Model.svmmodel.w(1:end-1);
+Model.svmmodel.bias = Model.svmmodel.w(end);
+        
 Model.paramstring = paramstring;
 first = find(Ytrain ~= 0);
 Model.FirstLabel = Ytrain( first(1) );
-
 
 if isfield(sPARAMS,'saveflag'),
   r = 10; 
