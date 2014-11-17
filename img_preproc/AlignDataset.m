@@ -1,18 +1,28 @@
-clear all;
+clear all variables;
 close all;
+warning('off', 'MATLAB:mir_warning_maybe_uninitialized_temporary');
 
 currDir = fileparts(mfilename('fullpath'));
+type = 'deepid';
 run(fullfile(currDir, 'init.m'));
 
 %% Define all paths here
-mainDir = '/media/data/datasets/pubfig';
+mainDir = 'D:\_Dev\Datasets\Face Recognition\WLFDB\01 database';
 allImagesDir = fullfile(mainDir, 'images');
-alignedImagesDir = fullfile(mainDir, 'aligned');
-detectionsFileName = 'detections_pubfig.txt';
+alignedImagesDir = fullfile(mainDir, ['aligned_' type]);
+detectionsFileName = 'detections_wlfdb.txt';
+temp = 1;
+while true
+    if ~exist(detectionsFileName, 'file')
+        break;
+    else
+        detectionsFileName = sprintf('detections_wlfdb_%d.txt', temp);
+        temp = temp + 1;
+    end
+end
 
 % whether to take only the central face or all faces
 useCenterFace = false;
-isOverWrite = true;
 
 %%
 figDirs = dir(allImagesDir);
@@ -21,6 +31,7 @@ figDirs(strncmp({figDirs.name}, '.', 1)) = []; % clear . and .. from dir
 nPersons = length(figDirs);
 noFacesCounter = 0;
 
+% iStart = input('Please start index :');
 fid = fopen(detectionsFileName, 'w');
 for iFigure = 1:nPersons
     fprintf('%d - %s\n', iFigure, figDirs(iFigure).name);
@@ -34,29 +45,30 @@ for iFigure = 1:nPersons
         mkdir(outputDir);
     end
         
-    for iImage = 1:nImages  
-        % original image
-        imPath = fullfile(currDir, images(iImage).name);
+    allFigDetections = cell(1, nImages);
+    parfor iImage = 1:nImages  
+        allFigDetections{iImage} = cell(2);
+        try
+            [allFigDetections{iImage}{1}, landmarks, allFigDetections{iImage}{2}] = ...
+                align_face(opts, fullfile(currDir, images(iImage).name));
+        catch me
+            fprintf('%s - %d - Error - %s\n', ...
+                figDirs(iFigure).name, iImage, me.message);
+        end        
+    end
+    for iImage = 1:nImages
         alignedImagePath = fullfile(outputDir, ...
             [images(iImage).name(1:end-3) 'jpg']);   
-        if (~isOverWrite && exist(alignedImagePath, 'file'))
-            continue;
-        end
-        try
-            [detection, landmarks, aligned_imgs] = align_face(opts, imPath);
-        catch me
-            fprintf('%s - Error - %s\n', imPath, me.message);
-        end
+        detection = allFigDetections{iImage}{1};
+        aligned_imgs = allFigDetections{iImage}{2};
 
         nFaces = length(aligned_imgs);
         if (nFaces == 0)
             noFacesCounter = noFacesCounter + 1;
-            continue;
-        end
-        
-        if (nFaces == 1)
+        elseif (nFaces == 1)
             imwrite(im2double(aligned_imgs{1}), alignedImagePath);   
-            log_detections(fid, imPath, alignedImagePath, detection(:, 1));
+            log_detections(fid, fullfile(currDir, images(iImage).name), ...
+                alignedImagePath, detection(:, 1)); 
         else
             if useCenterFace
                 % look for the central face
@@ -67,14 +79,16 @@ for iFigure = 1:nPersons
                 [~, iCorrectFace] = min(dists);
                 
                 imwrite(im2double(aligned_imgs{iCorrectFace}), alignedImagePath); 
-                log_detections(fid, imPath, alignedImagePath, detection(:, iCorrectFace));
+                log_detections(fid, fullfile(currDir, images(iImage).name), ...
+                    alignedImagePath, detection(:, iCorrectFace));
             else
                 % save all faces
                 for iFace = 1:nFaces
                     alignedImageName = [images(iImage).name(1:end-4) '.' num2str(iFace) '.jpg'];
                     alignedImagePath = fullfile(outputDir, alignedImageName);
                     imwrite(im2double(aligned_imgs{iFace}), alignedImagePath);
-                    log_detections(fid, imPath, alignedImagePath, detection(:, iFace));                  
+                    log_detections(fid, fullfile(currDir, images(iImage).name), ...
+                        alignedImagePath, detection(:, iFace));
                 end
             end
         end
