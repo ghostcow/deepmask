@@ -4,26 +4,68 @@
 % guess -
 % lfwX is the people.txt data (unrestricted) with the appropriate
 % trainsplit/trainlabel indicating split id and labels
-clear all; close all; clc;
+clear variables; close all; clc;
 addpath('..');
-addpath('../../../liblinear-1.95/matlab');
+addpath('../../../liblinear-1.94/matlab');
 
-lfwDir = 'D:\_Dev\Datasets\Face Recognition\LFW';
+lfwDir = '/media/data/datasets/LFW';
 pairsFilePath = fullfile(lfwDir, '/view2/pairs.txt');
 peopleFilePath = fullfile(lfwDir, '/view2/people.txt');
 
-%% Loading pairs data (10 splits bundled together)
-LoadPairsData;
+%% constants 
 numFolds = 10;
-numPairsPerFold = 300;
+numPairsPerFold = 300; % half of #pairs in each fold (positive/negative pairs)
+nPairs = numFolds*numPairsPerFold*2;
+jbTrainingSetType = 2; % 1 - use LFW data only, 2 - use verification set
 % lfw configuration : restricted/unrestrcited
-RESTRICTED = 1; % original value = 0
+RESTRICTED = false; % original value = false
 % should update the in-domain trained jb model, using the new domain data
-updateInDomainJbModel = false; % original value = true
+updateInDomainJbModel = true; % original value = true
 svmParams = struct('type', 1, 'C', 1); % original values : type=3, C=0.05
 % finalTestMethod : 
 % 1 = liblinear train & predict, 2 = liblinear train & our predict, 3 = choosing best threshold based on training
-finalTestMethod = 3; 
+finalTestMethod = 1; 
+
+lfwPeopleImagesFilePath = '../../data_files/LFW/people.mat'; % relevant only when RESTRICTED = false
+
+if true
+    resDir = '../../results_deepid/CFW_PubFig_SUFR_deepID.3.64_dropout_flipped';
+    lfwpairsResFileName = 'deepid_LFW_pairs_patch*';
+    lfwpeopleResFileName = 'deepid_LFW_people_patch*';
+    verificationResFileName = 'deepid_CPS_verification_patch*';
+    verificationImagesFilePath = '../../data/deepId/CFW_PubFig_SUFR/images_verification.txt';
+else
+    resDir = '../../results_deepid/CFW_PubFig_SUFR_deepID.3.64_dropout_flipped_ReLu';
+    lfwpairsResFileName = 'LFW_pairs_patch*';
+    lfwpeopleResFileName = 'LFW_people_patch*';
+    verificationResFileName = 'verification_patch*';
+    verificationImagesFilePath = '../../data/deepId/CFW_PubFig_SUFR/images_verification.txt';    
+end
+
+recognitionResDir = fullfile(resDir, 'recognition');
+if ~exist(recognitionResDir, 'dir')
+    mkdir(recognitionResDir)
+end
+
+%% Loading LFW pairs data (10 splits bundled together)
+% loadind lfw pairs features
+lfwpairsResFiles = dir(fullfile(resDir, lfwpairsResFileName));
+nFiles = length(lfwpairsResFiles);
+% final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
+datasetLeftFace = []; 
+datasetRightFace = [];
+for iFile = 1:nFiles
+    S = load(fullfile(resDir, lfwpairsResFiles(iFile).name));
+    if isempty(datasetLeftFace)
+        subFeatureDim = size(S.x, 1);
+        featureDim = nFiles*subFeatureDim;
+        datasetLeftFace = zeros(featureDim, nPairs);
+        datasetRightFace = zeros(featureDim, nPairs);
+    end
+    subFeatureIndex = 1 + (iFile - 1)*subFeatureDim;
+    datasetLeftFace(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x(:, 1:2:end);
+    datasetRightFace(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x(:, 2:2:end);
+end
 
 % convert lfw names to numbers (directories indices)
 figDirs = dir(fullfile(lfwDir, 'lfw'));
@@ -35,31 +77,62 @@ for iDir = 1:length(figDirs)
 end
 
 if ~RESTRICTED
-    % TODO: should load
-    % lfwx       - Nxd feature vectors for all face images (load from mat file)
+    % lfwX       - Nxd feature vectors for all face images (load from mat file)
     % trainlabel - person label for each face image
     % trainsplit - split id for each face image
-    peopleMetadata = GetPeopleData(peopleFilePath);
     
-    %     lfwx = load('lfw_people.mat');
-    %     lfwx = lfwx.x;
-    nImages = 20000; %size(lfwx, 2);
-    trainlabel = zeros(1, nImages);
-    trainsplit = zeros(1, nImages);
-    for iFold = 1:numFolds
-        for iPerson = 1:length(peopleMetadata{iFold})
-            trainlabel(peopleMetadata{iFold}(iPerson).imageIndices) = ...
-                mapNameToNum(peopleMetadata{iFold}(iPerson).name);
-            trainsplit(peopleMetadata{iFold}(iPerson).imageIndices) = iFold;
+    S = load(lfwPeopleImagesFilePath, 'labels', 'splitId');
+    nImages = length(S.labels);
+    trainlabel = S.labels;
+    trainsplit = S.splitId;
+    
+    lfwpeopleResFiles = dir(fullfile(resDir, lfwpeopleResFileName));
+    nFiles = length(lfwpeopleResFiles);
+    % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
+    lfwX = []; 
+    for iFile = 1:nFiles
+        S = load(fullfile(resDir, lfwpeopleResFiles(iFile).name));
+        if isempty(lfwX)
+            subFeatureDim = size(S.x, 1);
+            featureDim = nFiles*subFeatureDim;
+            lfwX = zeros(featureDim, nImages);
         end
+        subFeatureIndex = 1 + (iFile - 1)*subFeatureDim;
+        lfwX(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x(:, 1:end);
     end
 end
 
-% TEMP - loading lfw relevant data for training pca & joint-baysian learning
-[namesLeft, namesRight, imgNumLeft, imgNumRight] = ...
-    ParsePairsFile(pairsFilePath);
-idsLeft = cellfun(@(x)(mapNameToNum(x)), namesLeft);
-idsRight = cellfun(@(x)(mapNameToNum(x)), namesRight);
+if (jbTrainingSetType == 1)    
+    % TEMP - pca & joint-baysian learning using the LFW data (eventually it
+    % will be done with other external data)    
+    % this method is illegal, because we are using all set set together
+    [namesLeft, namesRight, imgNumLeft, imgNumRight] = ...
+        ParsePairsFile(pairsFilePath);
+    idsLeft = cellfun(@(x)(mapNameToNum(x)), namesLeft);
+    idsRight = cellfun(@(x)(mapNameToNum(x)), namesRight);
+
+    XSOURCEDOMAIN = [datasetLeftFace'; datasetRightFace'];
+    ysource = [idsLeft, idsRight];
+elseif (jbTrainingSetType == 2)
+    % loading verification images labels 
+    fid = fopen(verificationImagesFilePath);
+    C = textscan(fid, '%s %d', 'Delimiter', ',');
+    fclose(fid);
+    verificationFeaturesLabels = C{2};
+    
+    % loading verification set features
+    verificationResFiles = dir(fullfile(resDir, verificationResFileName));
+    nFiles = length(lfwpairsResFiles);
+    % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
+    verificationFeatures = zeros(featureDim, length(verificationFeaturesLabels));
+    for iFile = 1:nFiles
+        S = load(fullfile(resDir, verificationResFiles(iFile).name));
+        subFeatureIndex = 1 + (iFile - 1)*subFeatureDim;
+        verificationFeatures(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x;
+    end
+    XSOURCEDOMAIN = verificationFeatures';
+    ysource = verificationFeaturesLabels';
+end
 
 %% original code
 %SPLITS has all data as separate cells.
@@ -78,29 +151,34 @@ if false % original code, loading data from SPLITS cell array
 else
     XX1 = datasetLeftFace;
     XX2 = datasetRightFace;
-    ylong = labels;
-    splitid = zeros(1, size(XX1, 2));
+    ylong = zeros(nPairs, 1);
+    splitid = zeros(size(XX1, 2), 1);
     for iFold = 1:numFolds
         startIndex = 1 + (iFold-1)*2*numPairsPerFold;
         splitid(startIndex:(startIndex+2*numPairsPerFold-1)) = iFold;
+        ylong(startIndex:(startIndex+numPairsPerFold-1)) = 1; % positive pairs
+        ylong((startIndex+numPairsPerFold):(startIndex+2*numPairsPerFold-1)) = -1; % negative pairs
     end
-    
-    % TEMP - pca & joint-baysian learning using the LFW data (eventually it
-    % will be done with other external data)
-    XSOURCEDOMAIN = [XX1'; XX2'];
-    ysource = [idsLeft, idsRight];
 end
 
 %% PCA & joint-bayesian model learning, using extranal data
-outputDim = 299; %first parameter I tried
-load('after_pca.mat');
-if ~exist('INDOPCAModel','var')
+outputDim = 250; %first parameter I tried
+pcaFilePath = fullfile(recognitionResDir, 'pca_verification.mat');
+fprintf('\nPCA over verification set\n');
+if exist(pcaFilePath, 'file')
+    load(pcaFilePath);
+else
     [XX_pca,INDOPCAModel] = WPCA_v2(XSOURCEDOMAIN,[],outputDim,[]);
+    save(pcaFilePath, 'XX_pca', 'INDOPCAModel');
 end
 
-load('EM.mat');
-if ~exist('INDOJBMODEL','var')
+jbFilePath = fullfile(recognitionResDir, 'jb_verification.mat');
+fprintf('\njoint-bayesian over verification set\n');
+if exist(jbFilePath, 'file')
+    load(jbFilePath);
+else  
     INDOJBMODEL = get_EMLike_model_clean(XX_pca',ysource',[]);
+    save(jbFilePath, 'INDOJBMODEL');
 end
 
 params.initial_guess.Se = INDOJBMODEL.Se;
@@ -111,27 +189,27 @@ params.transfer_model.lambda = 0.5;
 params.transfer_model.w = params.transfer_model.lambda/(1+params.transfer_model.lambda);
 
 %% pca projection over the test data
+fprintf('\napplying pca over test data\n');
 XX1proj = WPCA_v2(XX1',INDOPCAModel,outputDim,[]);
 XX2proj = WPCA_v2(XX2',INDOPCAModel,outputDim,[]);
 if ~RESTRICTED
-    XX_pcaall = WPCA_v2(lfwX,INDOPCAModel,outputDim,[]);
+    XX_pcaall = WPCA_v2(lfwX',INDOPCAModel,outputDim,[]);
 end
 
 cPCAModel = cell(1);
 cBJmodel = cell(1);
 
 lambdarange = [1.35]; %not the first parameter I tried
-
+fprintf('\nstart testing...\n');
 for i = [5,setdiff(1:10,5)]
     disp(i);
     if ~RESTRICTED
-        XX_pca = XX_pcaall(ii,:);
         ii = find(trainsplit~=i);
+        XX_pca = XX_pcaall(ii,:);
         [~,~,thislabels] = unique(trainlabel(ii));
-    else
-        iitest = find(splitid==i);
-        iitrain = find(splitid~=i);
     end
+    iitest = find(splitid==i);
+    iitrain = find(splitid~=i);
     
     for k = 1:length(lambdarange),
         thislambda = lambdarange(k);
@@ -141,15 +219,23 @@ for i = [5,setdiff(1:10,5)]
         % using the train folds to get new estimation for the joint-bayesian model
         if ~exist('cBJmodel','var') || size(cBJmodel,2)<i || size(cBJmodel,1)<k || isempty(cBJmodel{k,i})
             if updateInDomainJbModel
-                if ~RESTRICTED
-                    cBJmodel{k,i} = ...
-                        get_EMLike_model_clean(XX_pca',thislabels,params);
-                else
-                    posi = iitrain(find(ylong(iitrain)>0));
-                    thisXX_pca = [XX1proj(posi,:);XX2proj(posi,:)];
-                    thislabelsrest = [1:length(posi), 1:length(posi)];
-                    cBJmodel{k,i} = ...
-                        get_EMLike_model_clean(thisXX_pca',thislabelsrest,params);
+                jbFilePath = fullfile(recognitionResDir, sprintf('jb_lambda%0.2f_%d.mat', thislambda, i));
+                if exist(jbFilePath, 'file')
+                    load(jbFilePath, 'x');
+                    cBJmodel{k,i} = x;
+                else                    
+                    if ~RESTRICTED
+                        cBJmodel{k,i} = ...
+                            get_EMLike_model_clean(XX_pca',thislabels,params);
+                    else
+                        posi = iitrain(find(ylong(iitrain)>0));
+                        thisXX_pca = [XX1proj(posi,:);XX2proj(posi,:)];
+                        thislabelsrest = [1:length(posi), 1:length(posi)];
+                        cBJmodel{k,i} = ...
+                            get_EMLike_model_clean(thisXX_pca',thislabelsrest,params);
+                    end
+                    x = cBJmodel{k,i};
+                    save(jbFilePath, 'x');
                 end
             else
                 % use the existing model
@@ -161,9 +247,11 @@ for i = [5,setdiff(1:10,5)]
             
             trainData = double(scsjbtl(i,iitrain,k));
             trainLabels = ylong(iitrain); % TODO: originally it was y - is it the same ??
-            MODEL = CLSliblinear(sparse(trainData), trainLabels, svmParams);
             testData = double(scsjbtl(i,iitest,k));
             testLabels = ylong(iitest);
+            if (finalTestMethod ~= 3)
+                MODEL = CLSliblinear(sparse(trainData), trainLabels, svmParams);
+            end
             switch finalTestMethod
                 case 1
                     weights = MODEL.svmmodel.w(1:end-1);
@@ -213,5 +301,5 @@ for i = [5,setdiff(1:10,5)]
         end
     end
 end
-
+RRjbtl
 [mean(RRjbtl(1,:)) std(RRjbtl(1,:))]

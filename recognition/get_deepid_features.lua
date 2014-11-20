@@ -7,7 +7,6 @@ require 'nn'
 require 'cunn'
 require 'ccn2'
 require 'options'
-require 'deep_id_utils'
 
 -- run this script like this :
 -- th get_deepid_features.lua <output path> --save <results dir name> --dataPath <input mat file path>
@@ -26,7 +25,7 @@ end
 opt = getOptions()
 opt.save = paths.concat('../results_deepid/', opt.save)
 
-print 'Loading data from mat file'
+print('Loading input data :', opt.dataPath)
 dataSet = mattorch.load(opt.dataPath)
 dataSetSize = dataSet.data:size()[4]
 
@@ -44,6 +43,7 @@ if useFlippedPatches then
     dataSet.labels = torch.cat(dataSet.labels, dataSet.labels)
 end
 
+require 'deep_id_utils'
 print('networks location : ', opt.save)
 print 'applying networks over the data'
 --- iterate the different networks

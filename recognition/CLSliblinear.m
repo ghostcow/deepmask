@@ -43,7 +43,7 @@ else
 end
 
 % -B 1 = using bias term
-basicstring = sprintf('-B 1 -q -s %d ', sPARAMS.type);
+basicstring = sprintf('-B 1 -s %d ', sPARAMS.type);
 
 paramstring = [basicstring cstring weightstring ...
                sPARAMS.additionalstring];

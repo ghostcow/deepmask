@@ -5,7 +5,7 @@ last_results=2
 
 # iterate directories and print latest accuracies
 output_dir_path=../results_deepid/$output_dir_name
-for run_name in $output_dir_path/*/; do
+for run_name in $output_dir_path/patch*/; do
   echo "train :"
   x=$(ls -t ${run_name}train* | head -n1)
   last_modified=$(date -r $x)

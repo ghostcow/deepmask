@@ -1,7 +1,31 @@
+package.path = package.path .. ";../nn/?.lua;"
 require 'image'
+require 'nn'
+require 'cunn'
+require 'ccn2'
+require 'mattorch'
+require 'options'
 
-batchSize = 128
-imageDim = 152
+--- some ugly way to know if this file was loaded by require, or by command line run
+-- similar to python check : if __name__ = "__main__":
+local myname = ...
+isCmd = true
+if type(package.loaded[myname]) == "userdata" then
+    isCmd = false
+else
+    --- first 2 input arguments are mandatory for this script
+    inputPath = arg[1]  -- txt file with image paths
+    outputPath = arg[2] -- output mat file path
+    arg[1] = nil
+    arg[2] = nil
+
+    --- parsing left additional parameters
+    opt = getOptions()
+end
+---
+
+batchSize = opt.batchSize
+imageDim = {152,152}
 
 function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
 
@@ -14,7 +38,7 @@ function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
     end
 
     function processBatch(batchImagesPaths)
-        inputs = torch.Tensor(batchSize, 3, imageDim, imageDim)
+        inputs = torch.Tensor(batchSize, 3, imageDim[1], imageDim[2])
         iImage = 1
         isBadImage = {}
         for _,imagePath in pairs(batchImagesPaths) do
@@ -25,7 +49,7 @@ function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
             else
                 -- image file doesn't exist (the alignment has failed)
                 print(imagePath, ' - not found!')
-                im = torch.Tensor(3, imageDim, imageDim):fill(0)
+                im = torch.Tensor(3, imageDim[1], imageDim[2]):fill(0)
                 isBadImage[imagePath] = true
             end
             inputs[iImage] = im
@@ -34,7 +58,7 @@ function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
             iImage = iImage + 1
         end
 
-        collectgarbage() -- called to prevent cude memory errors
+        collectgarbage() -- called to prevent cuda memory errors
         inputs = inputs:cuda()
         outputs = model:forward(inputs)
         features = model:get(featureLayerIndex).output:float()
@@ -87,4 +111,19 @@ function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
     end
 
     return faceFeatures
+end
+
+if isCmd then
+    -- load image paths from input file
+    imagePaths = {}
+    for line in io.lines(inputPath) do
+        table.insert(imagePaths, line)
+    end
+
+    local state_file_path = paths.concat('../results/', opt.save, 'model.net')
+    model = torch.load(state_file_path)
+    print(model)
+    featureLayerIndex = #(model.modules) - 3 -- last 3 layers : dropout, fully conected, log
+    faceFeatures = getFaceFeatures(imagePaths, model, featureLayerIndex, 2)
+    mattorch.save(outputPath, faceFeatures)
 end
