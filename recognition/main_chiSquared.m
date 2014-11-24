@@ -15,7 +15,7 @@ mode = 1; % 1 - restricted image configuration, 2 - unrestricted configuration
 % training (for each of the 2 classes)
 numPairsForTrain = 100000;
 %% load data
-LoadData;
+LoadPairsData;
 
 if (mode == 2)
     peopleMetadata = GetPeopleData();
