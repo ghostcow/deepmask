@@ -1,7 +1,9 @@
 % This script save the dataset image paths into csv file, where each line
 % format is : [image path],[label]
 
-clear all variables; clc;
+clear variables; 
+clc;
+
 %% change values here
 name = 'cfw_pubfig_sufr';
 % defining minimum & maximum samples per person (relevant only for the nn training)
@@ -21,8 +23,9 @@ elseif strcmp(name, 'cfw_pubfig')
     dirIndices = [1:3, 5]; 
     samplesPerPerson = [18 40];
 elseif strcmp(name, 'cfw_pubfig_sufr')
-    outputFilePath = '../data/deepId/CFW_PubFig_SUFR/images';
-    dirIndices = 1:6; 
+    type = 'deepid'; % different size of images
+    outputFilePath = '../data/deepId_full/CFW_PubFig_SUFR/images';
+    dirIndices = 1:5; 
     samplesPerPerson = [14 40]; 
     verificationPerc = 0.2;
 end
@@ -35,6 +38,34 @@ outputFilePathTest = [outputFilePath '_test.txt'];
 %% load all image paths
 LoadAllDatasetsPaths;
 personNames = nameToLabelMap.keys;
+
+% remove overlapping persons with LFW
+fid = fopen('../data/LFW/people.txt');
+C = textscan(fid, '%s %d');
+fclose(fid);
+lfwNames = C{1}(3:end);
+lfwNames = cellfun(@lower, lfwNames, 'UniformOutput', false);
+
+% here we could use intersect(personNames, lfwNames), but we will use the folder names to get more variations
+overlapPersons = {}; 
+for iPerson = 1:length(personNames)
+    personName = personNames{iPerson};
+    label = nameToLabelMap(personName);
+    currPersonImages = imagePaths{label};
+    dirNames = cell(1, length(currPersonImages));
+    for iImage = 1:length(currPersonImages)
+        imPath = currPersonImages{iImage};
+        temp = fileparts(imPath);
+        [~, figName] = fileparts(temp);
+        dirNames{iImage} = lower(figName);
+    end
+    dirNames = unique(dirNames);
+    if ~isempty(intersect(dirNames, lfwNames))
+        overlapPersons{end+1} = personName;
+        continue;
+    end
+end
+personNames = setdiff(personNames, overlapPersons);
 nPersons = length(personNames);
 
 %% split to nn/verification training
@@ -53,7 +84,7 @@ end
 
 %% data for nn training
 fprintf('label,name,#images\n');
-disp('\ndata for neural network (train + test)\n');
+fprintf('\ndata for neural network (train + test)\n');
 fidTrain = fopen(outputFilePathTrain, 'w');
 fidTest = fopen(outputFilePathTest, 'w');
 iLabel = 1;
@@ -96,7 +127,7 @@ fclose(fidTest);
 
 %% data for verification model training
 if (verificationPerc > 0)
-    disp('\ndata for face verification model\n');
+    fprintf('\ndata for face verification model\n');
     outputFilePathVer = [outputFilePath '_verification.txt'];
     fidVer = fopen(outputFilePathVer, 'w');
     for iPerson = 1:length(personNamesVer)

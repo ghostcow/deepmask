@@ -1,21 +1,33 @@
 clear all variables; clc; close all;
+addpath('../../mexopencv');
 
+imPath = 'test.jpg';
 %% align image 
+type = 'deepid';
 run('init.m');
-opts.alignparams.scale = 1.3; % to get 152x152 aligned image : scale = 3.5, im = aligned(78:229, 50:201, :)
-opts.alignparams.horRatio = 1.7;
-opts.alignparams.topRatio = 2;
-opts.alignparams.bottomRatio = 1.2;
 
 [basePts, x0, x1, y0, y1] = GetAlignedImageCoords(opts.alignparams);
 landmarksTarget = bsxfun(@minus, basePts, [x0;y0]) + 1;
-[detection, landmarks, aligned_imgs] = align_face(opts, 'test.jpg');
+[detection, landmarks, aligned_imgs] = align_face(opts, imPath);
 im = aligned_imgs{1};
+figure(100); imshow(im); title('original image');
+startPointDeepFace = [80 50];
+figure(101); imshow(im(startPointDeepFace(1):(startPointDeepFace(1)+152-1),...
+    startPointDeepFace(2):(startPointDeepFace(2)+152-1), :));
+title('deepface patch');
+
+scaleFactor = 0.5;
+im = imresize(im, scaleFactor);
+landmarksTarget = 1 + scaleFactor*(landmarksTarget-1);
+dlmwrite(['landmarks_aligned_' type '__.txt'], landmarksTarget);
 imageDim = [size(im, 2), size(im, 1)];
-figure(100); imshow(im);
 
 %% show all patches on the aligned image
-patchRadius = [15, 22, 31]; %round(15*[1, sqrt(2), 2]); % 19 / 27 / 39; 
+%  %round(15*[1, sqrt(2), 2]); % 19 / 27 / 39; 
+patchRadius = [35, 45, 55];
+if (scaleFactor == 0.5)
+    patchRadius = [15, 22, 31];
+end
 numScales = length(patchRadius);
 
 % first kind of patches - square
@@ -34,12 +46,12 @@ patchCenters2(:, 1) = 0.5*(topMiddle + eyesCenter);
 patchCenters2(:, 2) = eyesCenter;
 patchCenters2(:, 3) = [patchCenters2(1, 1); 0.5*(eyesCenter(2) + patchCenters1(2, 3))];
 patchCenters2(:, 4) = [patchCenters2(1, 1); patchCenters1(2, 3)];
-patchHalfWidths2 = [20 30 42]; % round(1.35*patchRadius)
+patchHalfWidths2 = round(1.35*patchRadius);
 
 % 2nd kind of patches - vertical frame
-patchCenters3 = eyesCenter;
-patchHalfWidths3 = [20 30 42];
-patchHalfHeights3 = round(1.2*patchHalfWidths3);
+patchCenters3 = 0.5*(eyesCenter + patchCenters1(:, 3)); % center between nose and eyes center
+patchHalfWidths3 = patchRadius;
+patchHalfHeights3 = round(1.4*patchHalfWidths3);
 
 % figure(1); imshow(im); hold on;
 

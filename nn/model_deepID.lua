@@ -10,14 +10,30 @@ require 'ccn2'
 require 'torch'
 require 'image'
 require 'options'
+require 'deep_id_utils'
+require 'math'
 
--- NOTE : model for rgb patch of size 31x31
-imageDim = 31
-local inputDim = 3 -- number of input maps of 1st layer
+-- extract patch scale
+iPatch,iScale = DeepIdUtils.parsePatchIndex(opt.patchIndex)
+imageDim = DeepIdUtils.patchSizeTarget[iScale]
+
+-- only rgb patches are supported for now
+local inputDim = 3
+-- deafult value for feature dimension
 featureDim = 160
 
 -- filter sizes & number of maps for layers C1,C2,C3,C4
-filtersSize = {4, 3, 3, 2}
+-- these sizes changes according to input dimension
+-- the output of M3 (for model subModelType='3') is fixed to 32x2x2
+if (imageDim == 31) then
+    filtersSize = {4, 3, 3, 2}
+elseif (imageDim == 45) then
+    filtersSize = {6, 5, 5, 4}
+elseif (imageDim == 59) then
+    -- 32x3x3
+    filtersSize = {8, 7, 7, 6}
+end
+
 --numMaps = {32, 48, 64, 80} -- NOTE: original paper uses {20, 40, 60, 80}
 --- NOTE : due to stablity issues (explosion of gradients) we use these maps & deepID.3.64 / deepID.3.160
 numMaps = {16, 32, 32, 48} -- NOTE: original paper uses {20, 40, 60, 80}
@@ -85,7 +101,7 @@ for iLayer = 1,2 do
     -- max-pooling layer
     inputMapDim = outputMapDim
     model:add(ccn2.SpatialMaxPooling(maxPoolingSize, maxPoolingStride))
-    outputMapDim = inputMapDim / maxPoolingStride
+    outputMapDim = math.floor(inputMapDim / maxPoolingStride)
     print(string.format('M%d : %dx%dx%dx%d@%dx%d', iLayer,
         numMaps[layerIndex], maxPoolingSize, maxPoolingSize, numMaps[layerIndex], outputMapDim, outputMapDim))
 
@@ -105,69 +121,68 @@ print(string.format('C3 : %dx%dx%dx%d@%dx%d',
 
 inputMapDim = outputMapDim
 model:add(ccn2.SpatialMaxPooling(maxPoolingSize, maxPoolingStride))
-outputMapDim = inputMapDim / maxPoolingStride
+outputMapDim = math.floor(inputMapDim / maxPoolingStride)
 print(string.format('M3 : %dx%dx%dx%d@%dx%d',
     numMaps[layerIndex], maxPoolingSize, maxPoolingSize, numMaps[layerIndex], outputMapDim, outputMapDim))
 layerIndex = layerIndex + 1
 
 -- C4 layer (multi-scale) : 2 parallel branches
 if (subModelType == 'full') then
-multiScaleLayer = nn.Concat(2) -- first dimension is is batch, 2nd is the feature
+    multiScaleLayer = nn.Concat(2) -- first dimension is is batch, 2nd is the feature
 
--- 1st branch : fully connected layer computing half of the feature
-firstScaleBranch = nn.Sequential()
-    -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
-firstScaleBranch:add(nn.Transpose({4,1},{4,2},{4,3}))
-local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
-firstScaleBranch:add(nn.Reshape(outputSize, true))
---firstScaleBranch:add(nn.View(-1):setNumInputDims(2))
-firstScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
-multiScaleLayer:add(firstScaleBranch)
+    -- 1st branch : fully connected layer computing half of the feature
+    firstScaleBranch = nn.Sequential()
+        -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
+    firstScaleBranch:add(nn.Transpose({4,1},{4,2},{4,3}))
+    local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
+    firstScaleBranch:add(nn.Reshape(outputSize, true))
+    --firstScaleBranch:add(nn.View(-1):setNumInputDims(2))
+    firstScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
+    multiScaleLayer:add(firstScaleBranch)
 
--- 2nd branch : locally connected layer followed by fully connected layer computing 2nd half of the feature
-secondScaleBranch =  nn.Sequential()
-inputDim = numMaps[layerIndex - 1]
-inputMapDim = outputMapDim
-secondScaleBranch:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex]))
-secondScaleBranch:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
-print(string.format('C4 : %dx%dx%dx%d@%dx%d',
-    numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
-layerIndex = layerIndex + 1
+    -- 2nd branch : locally connected layer followed by fully connected layer computing 2nd half of the feature
+    secondScaleBranch =  nn.Sequential()
+    inputDim = numMaps[layerIndex - 1]
+    inputMapDim = outputMapDim
+    secondScaleBranch:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex]))
+    secondScaleBranch:add(nn.ReLU())
+    outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
+    print(string.format('C4 : %dx%dx%dx%d@%dx%d',
+        numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+    layerIndex = layerIndex + 1
 
-    -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
-secondScaleBranch:add(nn.Transpose({4,1},{4,2},{4,3}))
-local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
-secondScaleBranch:add(nn.Reshape(outputSize, true))
--- secondScaleBranch:add(nn.View(-1):setNumInputDims(2))
-secondScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
-multiScaleLayer:add(secondScaleBranch)
+        -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
+    secondScaleBranch:add(nn.Transpose({4,1},{4,2},{4,3}))
+    local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
+    secondScaleBranch:add(nn.Reshape(outputSize, true))
+    -- secondScaleBranch:add(nn.View(-1):setNumInputDims(2))
+    secondScaleBranch:add(nn.Linear(outputSize, featureDim / 2))
+    multiScaleLayer:add(secondScaleBranch)
 
-model:add(multiScaleLayer)
+    model:add(multiScaleLayer)
 elseif (subModelType == '3') then
-model:add(nn.Transpose({4,1},{4,2},{4,3}))
-local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
--- model:add(nn.Reshape(outputSize, true))
-model:add(nn.View(-1, outputSize):setNumInputDims(2))
-model:add(nn.Linear(outputSize, featureDim))
+    model:add(nn.Transpose({4,1},{4,2},{4,3}))
+    local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
+    -- model:add(nn.Reshape(outputSize, true))
+    model:add(nn.View(-1, outputSize):setNumInputDims(2))
+    model:add(nn.Linear(outputSize, featureDim))
 elseif (subModelType == '1scale') then
-inputDim = numMaps[layerIndex - 1]
-inputMapDim = outputMapDim
-model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex]))
-model:add(nn.ReLU())
-outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
-print(string.format('C4 : %dx%dx%dx%d@%dx%d',
-    numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
-layerIndex = layerIndex + 1
+    inputDim = numMaps[layerIndex - 1]
+    inputMapDim = outputMapDim
+    model:add(ccn2.SpatialConvolutionLocal(inputDim, numMaps[layerIndex], inputMapDim, filtersSize[layerIndex]))
+    model:add(nn.ReLU())
+    outputMapDim = inputMapDim - filtersSize[layerIndex] + 1
+    print(string.format('C4 : %dx%dx%dx%d@%dx%d',
+        numMaps[layerIndex], filtersSize[layerIndex], filtersSize[layerIndex], inputDim, outputMapDim, outputMapDim))
+    layerIndex = layerIndex + 1
 
--- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
-model:add(nn.Transpose({4,1},{4,2},{4,3}))
-local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
-model:add(nn.View(-1, outputSize):setNumInputDims(2))
-model:add(nn.Linear(outputSize, featureDim))
+    -- change the dimensions from: depthXheightXwidthXbatch to BatchXdepthXheightXwidth
+    model:add(nn.Transpose({4,1},{4,2},{4,3}))
+    local outputSize = numMaps[layerIndex - 1]*outputMapDim*outputMapDim
+    model:add(nn.View(-1, outputSize):setNumInputDims(2))
+    model:add(nn.Linear(outputSize, featureDim))
 end
 model:add(nn.ReLU()) --activation function for the previous fully-connected layer
-
 
 -- Final layer F6 - classification into class out of nLabels classses
 model:add(nn.Dropout())

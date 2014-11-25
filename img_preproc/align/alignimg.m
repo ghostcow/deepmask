@@ -8,6 +8,7 @@ function faceImg = alignimg(img, landmarks, alignparams)
     tform = cp2tform(landmarks', basePts', 'affine');
     
     % apply transform and do crop
+    img = im2double(img);
     faceImg = imtransform(img, tform, 'bicubic', 'XData', [x0 x1], ...
                                                  'YData', [y0 y1], ...
                                                  'XYScale', 1);    
