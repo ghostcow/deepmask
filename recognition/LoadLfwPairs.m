@@ -1,4 +1,4 @@
-function [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(resFilePath)
+function [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(resFilePath, maxNumNets)
 % load features for LFW pairs images (as decalred in pairs.txt)
 % INPUT
 %   resFilePath - path to features file or a pattern of more than 1 file (for
@@ -7,6 +7,10 @@ function [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(resFilePath
 %   targetX1, targetX2 - feature pairs
 %   targetY - label for each pair (1/-1)
 %   targetSplitId - split id (1-10) for each pair
+
+if ~exist('maxNumNets', 'var')
+    maxNumNets = inf;
+end
 
 % constants
 numFolds = 10;
@@ -17,6 +21,7 @@ nPairs = numFolds*numPairsPerFold*2;
 lfwpairsResFiles = dir(resFilePath);
 resFileRoot = fileparts(resFilePath);
 nFiles = length(lfwpairsResFiles);
+nFiles = min(nFiles, maxNumNets);
 
 % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
 targetX1 = []; 

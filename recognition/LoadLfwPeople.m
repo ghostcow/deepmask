@@ -1,4 +1,4 @@
-function [targetPeopleX, targetPeopleY, targetPeopleSplitId] = LoadLfwPeople(lfwpeopleResFilePath, lfwPeopleImagesFilePath)
+function [targetPeopleX, targetPeopleY, targetPeopleSplitId] = LoadLfwPeople(lfwpeopleResFilePath, lfwPeopleImagesFilePath, maxNumNets)
 % load features for LFW people images (as decalred in people.txt)
 % INPUT
 %   lfwpeopleResFilePath - path to features file or a pattern of more than 1 file (for
@@ -10,6 +10,9 @@ function [targetPeopleX, targetPeopleY, targetPeopleSplitId] = LoadLfwPeople(lfw
 %   targetPeopleY - identity label for each feature
 %   targetPeopleSplitId - split id (1-10) for each feature
 
+if ~exist('maxNumNets', 'var')
+    maxNumNets = inf;
+end
 % load labels & split ids
 S = load(lfwPeopleImagesFilePath, 'labels', 'splitId');
 nImages = length(S.labels);
@@ -21,6 +24,8 @@ lfwpeopleResFiles = dir(lfwpeopleResFilePath);
 resFileRoot = fileparts(lfwpeopleResFilePath);
 
 nFiles = length(lfwpeopleResFiles);
+nFiles = min(nFiles, maxNumNets);
+
 % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
 targetPeopleX = []; 
 for iFile = 1:nFiles

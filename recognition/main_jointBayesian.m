@@ -11,6 +11,7 @@ addpath('tools');
 lfwDir = '/media/data/datasets/LFW';
 pairsFilePath = fullfile(lfwDir, '/view2/pairs.txt');
 peopleFilePath = fullfile(lfwDir, '/view2/people.txt');
+type = 'deepid'; % type od the face images : deepface / deepid
 
 %% constants 
 % lfw configuration : restricted/unrestrcited
@@ -21,21 +22,17 @@ svmParams = struct('type', 1, 'C', 1); % original values : type=3, C=0.05
 % finalTestMethod : 
 % 1 = liblinear train & predict, 2 = liblinear train & our predict, 3 = choosing best threshold based on training
 finalTestMethod = 3; 
+maxNumNets = 15; % we can test accuracy if we use only some of the nets
 
-lfwPeopleImagesFilePath = '../data_files/LFW/people.mat'; % relevant only when RESTRICTED = false
-if false
-    resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_dropout_flipped';
-    lfwpairsResFileName = 'deepid_LFW_pairs_patch*';
-    lfwpeopleResFileName = 'deepid_LFW_people_patch*';
-    verificationResFileName = 'deepid_CPS_verification_patch*';
-    verificationImagesFilePath = '../data/deepId/CFW_PubFig_SUFR/images_verification.txt';
-else
-    resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_dropout_flipped_ReLu';
-    lfwpairsResFileName = 'LFW_pairs_patch*';
-    lfwpeopleResFileName = 'LFW_people_patch*';
-    verificationResFileName = 'verification_patch*';
-    verificationImagesFilePath = '../data/deepId/CFW_PubFig_SUFR/images_verification.txt';    
+if strcmp(type, 'deepface')
+    lfwPeopleImagesFilePath = '../data_files/LFW/people.mat'; % relevant only when RESTRICTED = false
+elseif strcmp(type, 'deepid')
+    lfwPeopleImagesFilePath = '../data_files/deepId_full/LFW/people.mat'; % relevant only when RESTRICTED = false
 end
+
+[resDir, lfwpairsResFileName, lfwpeopleResFileName, verificationResFileName, verificationImagesFilePath] = ...
+    GetResultFilePaths(3);
+
 recognitionResDir = fullfile(resDir, 'recognition');
 if ~exist(recognitionResDir, 'dir')
     mkdir(recognitionResDir)
@@ -52,6 +49,7 @@ verificationFeaturesLabels = C{2};
 % loading verification set features
 verificationResFiles = dir(fullfile(resDir, verificationResFileName));
 nFiles = length(verificationResFiles);
+nFiles = min(nFiles, maxNumNets);
 % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
 verificationFeatures = [];
 for iFile = 1:nFiles
@@ -70,15 +68,15 @@ sourceY = verificationFeaturesLabels';
 
 %% Loading LFW data (target domain)
 [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(...
-    fullfile(resDir, lfwpairsResFileName));
+    fullfile(resDir, lfwpairsResFileName), maxNumNets);
 if ~RESTRICTED
     % load by people (based on people.txt)
     [targetPeopleX, targetPeopleY, targetPeopleSplitId] = LoadLfwPeople(...
-        fullfile(resDir, lfwpeopleResFileName), lfwPeopleImagesFilePath);
+        fullfile(resDir, lfwpeopleResFileName), lfwPeopleImagesFilePath, maxNumNets);
 end
 
 %% PCA & joint-bayesian model learning over the source domain
-outputDim = 250; %first parameter I tried
+outputDim = 150; %first parameter I tried
 pcaFilePath = fullfile(recognitionResDir, 'pca_verification.mat');
 fprintf('\nPCA over verification set\n');
 if exist(pcaFilePath, 'file')
@@ -111,8 +109,6 @@ targetX2pca = wpca(targetX2',sourcePcaModel,outputDim,[]);
 if ~RESTRICTED
     targetPeopleXpca = wpca(targetPeopleX',sourcePcaModel,outputDim,[]);
 end
-
-
 
 %% cross-validation over the target data
 % for each split the joint bayesian model is updated using the training data

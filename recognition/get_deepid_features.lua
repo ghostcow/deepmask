@@ -10,8 +10,6 @@ require 'options'
 
 -- run this script like this :
 -- th get_deepid_features.lua <output path> --save <results dir name> --dataPath <input mat file path>
--- opt.save
--- opt.dataPath
 
 useFlippedPatches = true
 --- first input arguments is mandatory for this script
@@ -53,6 +51,12 @@ for modelDirName in io.popen('ls -a "'..opt.save..'"'):lines() do
     print('valid directory')
     modelDirPath = paths.concat(opt.save, modelDirName)
     model = torch.load(paths.concat(modelDirPath, 'model.net'))
+    --- first of all, turn off all dropout modules
+    for iModule = 1,#model.modules do
+        if (torch.type(model.modules[iModule]) == 'nn.Dropout') then
+            model.modules[iModule].train = false
+        end
+    end
     featureLayerIndex = #(model.modules) - 3 -- last 3 layers : dropout, fully conected, log
 
     opt.patchIndex = tonumber(modelDirName:sub(#'patch'+1))

@@ -1,7 +1,15 @@
 clc; clear variables;
-outputFilePath = '../data_files/LFW/people.mat';
-lfwAlignedImagesDir = '/media/data/datasets/LFW/lfw_aligned';
-imSize = [152, 152];
+type = 'deepid';
+
+if strcmp(type, 'deepface')
+    outputFilePath = '../data_files/LFW/people.mat';
+    lfwAlignedImagesDir = '/media/data/datasets/LFW/lfw_aligned';
+    scaleFactor = 1;
+elseif strcmp(type, 'deepid')
+    outputFilePath = '../data_files/deepId_full/LFW/people.mat';
+    lfwAlignedImagesDir = '/media/data/datasets/LFW/lfw_aligned_deepid';
+    scaleFactor = 0.5;
+end
 
 % convert lfw names to numbers (directories indices)
 figDirs = dir(lfwAlignedImagesDir);
@@ -16,7 +24,7 @@ end
 peopleMetadata = GetPeopleData();
 
 maxNumImages = 30000;
-data = single(zeros(maxNumImages, 3, imSize(1), imSize(2)));
+data = [];
 labels = uint16(zeros(maxNumImages, 1));
 splitId = uint16(zeros(maxNumImages, 1));
 iImageGlobal = 1;
@@ -29,7 +37,9 @@ for iFold = 1:numel(peopleMetadata)
         splitId(iImageGlobal:(iImageGlobal + nImages - 1)) = iFold;
         for iImage = 1:nImages
             imPath = fullfile(lfwAlignedImagesDir, personName, sprintf('%s_%04d.jpg', personName, iImage));
+            isGoodImage = true;
             if ~exist(imPath, 'file')
+                isGoodImage = false;
                 im = zeros(imSize(1), imSize(2), 3);
                 % mark invalid images with label=0
                 labels(iImageGlobal + iImage - 1) = 0;
@@ -44,9 +54,16 @@ for iFold = 1:numel(peopleMetadata)
                 end
             end
             im = im2single(im);
+            if (scaleFactor ~= 1) && (isGoodImage)
+                im = imresize(im, scaleFactor);
+            end               
             % convert shape from 152x152x3 3x152x152
             im = shiftdim(im, 2); 
-
+            if isempty(data)
+                imSize = [size(im, 2), size(im, 3)];
+                data = single(zeros(maxNumImages, 3, imSize(1), imSize(2)));
+            end
+            
             data(iImageGlobal + iImage - 1,:,:,:) = im;
         end
         iImageGlobal = iImageGlobal + nImages;
