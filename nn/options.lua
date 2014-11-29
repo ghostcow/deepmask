@@ -11,8 +11,11 @@ function getOptions()
 	cmd:option('--visualize', false, 'visualize input data and weights during training')
     cmd:option('--loadState', false, 'load exisiting state : pre-trained net and optimization parameters')
     cmd:option('--modelName', 'model', 'name of the model (network) to use - model/model2/model_clean_aligned_faces')
-    cmd:option('--patchIndex', 1, 'relevant for deepId only - index of the patch for training')
     cmd:option('--debugOnly', false, 'if true, no trainig-testing is done and everthing is just loaded')
+
+    -- deepid parameters :
+    cmd:option('--patchIndex', 1, 'relevant for deepId only - index of the patch for training')
+    cmd:option('--deepIdMode', 1, 'mode which indicates how the patches are generated (1=gets deepface images(152x152) and produce 5 patches, 2=gets deepid images(140x115) and produce 15 patches (3 scales)')
 
 	-- data:
 	cmd:option('--dataPath', '../data_files/CFW_flat/cfw_flat.t7', 'path to dataset file (mat or t7)')

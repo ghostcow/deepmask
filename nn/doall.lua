@@ -29,7 +29,7 @@ if opt.useDatasetChunks then
 else
     dofile 'data.lua'
 end
-
+collectgarbage()
 dofile(opt.modelName..'.lua')
 dofile 'train.lua'
 if not opt.trainOnly then

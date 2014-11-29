@@ -3,17 +3,17 @@
 
 % should use different mat file to train/test
 useDifferentFiles = false;
-if useDifferentFiles
-    randomPermutation = true;
-else
-    randomPermutation = false;
-end
-imSize = [152 152];
-maxImagesPerFile = 40000; % relevant only if useDifferentFiles=true
+randomPermutation = false;
+maxImagesPerFile = 5000; % relevant only if useDifferentFiles=true
 
-%% change paths here
-inputFilePath = '../data/deepId/CFW_PubFig_SUFR/images';
-outputFilePathFormat = '../data_files/deepId/CFW_PubFig_SUFR/CFW_PubFig_SUFR';
+%% change values here
+name = 'cfw_pubfig_sufr';
+if strcmp(name, 'cfw_pubfig_sufr')
+    inputFilePath = '../data/deepId_full/CFW_PubFig_SUFR/images';
+    outputFilePathFormat = '../data_files/deepId_full/CFW_PubFig_SUFR/CFW_PubFig_SUFR';
+    useDifferentFiles = true;
+    scaleFactor = 0.5;
+end
 
 % input txt files
 inputFilePathTrain = [inputFilePath '_train.txt'];
@@ -25,6 +25,10 @@ inputFilePathVer = [inputFilePath '_verification.txt'];
 if exist(inputFilePathVer, 'file')
     setTypes{end+1} = 'verification';
     inputFilePaths{end+1} = inputFilePathVer;
+    
+    % verification data is always saved as one file
+    verification = [];
+    verificationLabels = [];
 end
 
 if ~useDifferentFiles
@@ -35,7 +39,7 @@ if ~useDifferentFiles
 end
 
 %% Load all images and save into mat files
-for iSet = 3 %1:length(setTypes)
+for iSet = 1:length(setTypes)
     setType = setTypes{iSet};
     fid = fopen(inputFilePaths{iSet});
     C = textscan(fid, '%s %d','delimiter', ',');
@@ -54,7 +58,7 @@ for iSet = 3 %1:length(setTypes)
         iEnd = min(iStart + maxImagesPerFile - 1, nImages);
         chunkSize = iEnd - iStart + 1;
 
-        data = single(zeros(chunkSize, 3, imSize(1), imSize(2)));
+        data = []; 
         labels = uint16(zeros(chunkSize, 1));
         jImage = 1;
         for iImage = iStart:iEnd
@@ -70,27 +74,48 @@ for iSet = 3 %1:length(setTypes)
             end
 
             im = im2single(im);
+            if (scaleFactor ~= 1)
+                im = imresize(im, scaleFactor);
+            end
+            
             % convert shape from 152x152x3 3x152x152
             im = shiftdim(im, 2); 
-
+            
+            if isempty(data)
+                data = single(zeros(chunkSize, 3, size(im, 2), size(im, 3)));
+            end
             data(jImage,:,:,:) = im;
             labels(jImage) = imageLabel;
             jImage = jImage + 1;
         end
-        if (useDifferentFiles || strcmp(setType, 'verification'))
-            save(outputFilePath, 'data', 'labels', '-v7.3');
+        if (strcmp(setType, 'verification'))
+            verification = cat(1, verification, data);
+            verificationLabels = cat(1, verificationLabels, labels);
+            if (iFile == nFiles)
+                data = verification;
+                labels = verificationLabels;
+                save([outputFilePathFormat '_' setType '.mat'], 'data', 'labels', '-v7.3');
+            end
         else
-            if strcmp(setType, 'train')
-                train = cat(1, train, data);
-                trainLabels = cat(1, trainLabels, labels);
-            elseif strcmp(setType, 'test')
-                test = cat(1, test, data);
-                testLabels = cat(1, testLabels, labels);    
+            if (useDifferentFiles)
+                save(outputFilePath, 'data', 'labels', '-v7.3');
+            else
+                if strcmp(setType, 'train')
+                    train = cat(1, train, data);
+                    trainLabels = cat(1, trainLabels, labels);
+                elseif strcmp(setType, 'test')
+                    test = cat(1, test, data);
+                    testLabels = cat(1, testLabels, labels);
+                    if (iFile == nFiles)
+                        save([outputFilePathFormat '.mat'], 'train', 'trainLabels', 'test', 'testLabels', '-v7.3');
+                        clear train trainLabels test testLabels
+                    end
+                end
             end
         end
         iStart = iEnd + 1;
     end
 end
 if ~useDifferentFiles
-    save([outputFilePathFormat '.mat'], 'train', 'trainLabels', 'test', 'testLabels', '-v7.3');
+    
 end
