@@ -15,9 +15,6 @@ twodee_landmarks = [twodee_landmarks(1:2:end, 1)'; ...
 %new_im = Part5_piecewise_affine(twodee_landmarks*2, ...
 %                                threedee_landmarks(:,1:2), ...
 %                                im);
-try
 tform = fitgeotrans(twodee_landmarks*2,threedee_landmarks(:,1:2),'pwl');
-catch
-end
 new_im = imwarp(im,tform);
 imshow(new_im);
