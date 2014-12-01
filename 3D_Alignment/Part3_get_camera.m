@@ -8,7 +8,7 @@ function P = Part3_get_camera(x2d, landmarks3D, cov_mat)
     end
     
     % get camera
-    P = lscov(x2d, X3d, cov_mat);
+    P = lscov(X3d, x2d, cov_mat);
     P = reshape(P,4,2)';
 end
 
