@@ -1,5 +1,5 @@
-function [samples, cova] = get_cov_mat(landmarks_path)
-    load(landmarks_path);
+function cova = get_cov_mat()
+    load landmarks_lfw.mat;
     
     % filter out non frontal faces
     bs = [landmarks.bs];
