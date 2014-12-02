@@ -1,7 +1,6 @@
-function points = display_3d_model()	
-	load 3D_model.mat
+function points = get_3D_model()
     load 3D_points.mat
-
+    
     points=[nm_nose; 
             nm_left_eye; 
             nm_left_brow;   
@@ -14,13 +13,6 @@ function points = display_3d_model()
             flipud(nm_left_face(2:9,:));
             nm_right_face;
             ];
+    points=points';
+end
 
-    i=1;
-    j=size(points,1);
-
-    % display 3d image with landmarks
-    display_shape(shape,tl); 
-    hold on; 
-    plot3(points(i:j,1), points(i:j,2), points(i:j,3), 'r.');
-    labels=cellstr(num2str([i:j]'));
-    text(points(i:j,1), points(i:j,2), points(i:j,3), labels);
