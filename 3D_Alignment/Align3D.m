@@ -1,3 +1,7 @@
+close all; 
+clear variables; 
+clc;
+
 addpath('Model_3D/')
 addpath('Model_2D/')
 
@@ -11,14 +15,19 @@ twodee_landmarks = [lfw_2D_landmarks(1, 1:2:end); ...
                     lfw_2D_landmarks(1, 2:2:end)];
 
 P = get_camera(twodee_landmarks,threedee_landmarks, cov_mat);
-[r, d] = get_residual(twodee_landmarks, threedee_landmarks, P);
+[rXYZ, d] = get_residual(twodee_landmarks, threedee_landmarks, P);
 
 
-%new_im = Part5_piecewise_affine(twodee_landmarks*2', ...
-%                                threedee_landmarks(1:3,:)', ...
-%                                im);
-tform = fitgeotrans(twodee_landmarks',r(1:2,:)','pwl');
 im = imread('/Users/adamp/Research/test/lfw/aligned_deepid/John_Manley/John_Manley_0003.jpg');
+im = im2double(im);
+
+[height, width, ~] = size(im);
+rXY = normalize_3D_model(rXYZ,[width;height]);
+
+% new_im = piecewise_affine(twodee_landmarks', ...
+%                           rXY', ...
+%                           im);
+tform = fitgeotrans(twodee_landmarks',rXY','pwl');
 new_im = imwarp(im,tform);
 
 imshow(new_im);
