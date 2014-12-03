@@ -1,5 +1,5 @@
 function [ref_XY] = test()
-addpath('/Users/adamp/Research/Matlab/3D_Alignment/face-release1.0-basic/');
+addpath('/Users/adamp/Research/Matlab/calib_example/face-release1.0-basic/');
 % load and visualize model
 % Pre-trained model with 146 parts. Works best for faces larger than 80*80
 load face_p146_small.mat
