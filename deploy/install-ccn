@@ -1,5 +1,6 @@
 # our fork of ccn2
 git clone https://github.com/adampolyak/cuda-convnet2.torch
 cd cuda-convnet2.torch
+git checkout locally_connected_patch
 sudo luarocks make ccn2-scm-1.rockspec
 
