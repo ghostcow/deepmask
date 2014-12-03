@@ -2,14 +2,14 @@ clc; clear all;
 addpath('face-release1.0-basic');
 run('face-release1.0-basic/init.m');
 
-detectionsFileName = 'pose_wlfdb';
-landmarksFileName = 'landmarks_wlfdb';
-mainDir = '/media/data/datasets/WLFDB'; %'/media/data/datasets/WLFDB';
-alignedImagesDir = fullfile(mainDir, 'aligned_deepid');
+detectionsFileName = 'pose_lfw';
+landmarksFileName = 'landmarks_lfw';
+mainDir = '/media/data/datasets/LFW'; %'/media/data/datasets/WLFDB';
+alignedImagesDir = fullfile(mainDir, 'lfw_aligned_deepid');
 noFacesDir = fullfile(mainDir, 'no_face_pose');
 nonfrontalDir = fullfile(mainDir, 'non_frontal_pose');
 noncentralDir = fullfile(mainDir, 'non_central_face');
-
+shouldMove = false;
 %% 
 figDirs = dir(alignedImagesDir);
 figDirs = figDirs([figDirs.isdir]); % clear all non dir files
@@ -40,11 +40,12 @@ end
 
 nLandmarksTot = 0;
 landmarksSpace = 10;
+landmarks = struct('path', cell(1, 0), 'bs', cell(1, 0));
+save(landmarksFileName, 'landmarks');
 landmarks = struct('path', cell(1, landmarksSpace), 'bs', cell(1, landmarksSpace));
-save(fullfile(landmarksFileName), 'landmarks');
 
 fid = fopen(detectionsFileName, 'w');
-for iFigure = 2730:nPersons
+for iFigure = 1:nPersons
     fprintf('%d - %s\n', iFigure, figDirs(iFigure).name);
     currDir = fullfile(alignedImagesDir, figDirs(iFigure).name);
     
@@ -79,7 +80,9 @@ for iFigure = 2730:nPersons
         if (isempty(bs{iImage}))
             fprintf('No Face - %s\n', images(iImage).name);
             nNoFace = nNoFace + 1;
-            movefile(imPath, fullfile(noFacesDir, [figDirs(iFigure).name '.' images(iImage).name]));
+            if shouldMove
+                movefile(imPath, fullfile(noFacesDir, [figDirs(iFigure).name '.' images(iImage).name]));
+            end
         else
             bs{iImage} = bs{iImage}(1);
             % face location should be in the center (we assume the input images are already aligned
@@ -87,25 +90,31 @@ for iFigure = 2730:nPersons
             centerMass = mean(centerMass);
             if (norm(centerMass - [dimensions(iImage, 2) dimensions(iImage, 1)]/2) > faceCenterMaxShift);
                 fprintf('No Central Face - %s\n', images(iImage).name);
-                movefile(imPath, fullfile(noncentralDir, [figDirs(iFigure).name '.' images(iImage).name]));
+                if shouldMove
+                    movefile(imPath, fullfile(noncentralDir, [figDirs(iFigure).name '.' images(iImage).name]));
+                end
             else
                 % check pose
                 pose = posemap(bs{iImage}.c);
                 if (pose ~= 0)
                     fprintf('pose=%d - %s\n', pose, images(iImage).name);
                     nNonFrontal = nNonFrontal + 1;
-                    movefile(imPath, fullfile(nonfrontalDir, [figDirs(iFigure).name '.' images(iImage).name]));
+                    if shouldMove
+                        movefile(imPath, fullfile(nonfrontalDir, [figDirs(iFigure).name '.' images(iImage).name]));
+                    end
                 end
                 % write into detections file : imPath,pose
                 fprintf(fid, '%s,%d\n', imPath, pose);
                 
                 nLandmarksTot = nLandmarksTot + 1;
                 landmarks(nLandmarksTot) = struct('path', imPath, 'bs', bs{iImage});
-                if (~isempty(landmarks(end).path))
+                if (nLandmarksTot == length(landmarks))
                     % landmarks array is full
-                    S = load(landmarksFileName);
-                    landmarks = [S.landmarks, landmarks];
-                    save(fullfile(mainDir, landmarksFileName), 'landmarks');
+                    %S = load(landmarksFileName);
+                    %landmarks = [S.landmarks, landmarks];
+                    
+                    % save landmarks every few iterations (frequency is defined by landmarksSpace)
+                    save(landmarksFileName, 'landmarks');
                     landmarks = [landmarks struct('path', cell(1, landmarksSpace), 'bs', cell(1, landmarksSpace))];
                 end
             end
@@ -113,3 +122,4 @@ for iFigure = 2730:nPersons
     end
 end
 save(landmarksFileName, 'landmarks');
+fclose(fid);

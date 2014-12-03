@@ -1,4 +1,4 @@
-function display_3d_model()	
+function points = display_3d_model()	
 	load 3D_model.mat
     points=get_3D_model();
     

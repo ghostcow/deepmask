@@ -17,7 +17,7 @@ P = get_camera(twodee_landmarks,threedee_landmarks, cov_mat);
 %new_im = Part5_piecewise_affine(twodee_landmarks*2', ...
 %                                threedee_landmarks(1:3,:)', ...
 %                                im);
-tform = fitgeotrans(twodee_landmarks'*2,r(1:2,:)','pwl');
+tform = fitgeotrans(twodee_landmarks',r(1:2,:)','pwl');
 im = imread('/Users/adamp/Research/test/lfw/aligned_deepid/John_Manley/John_Manley_0003.jpg');
 new_im = imwarp(im,tform);
 

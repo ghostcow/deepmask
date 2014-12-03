@@ -1,5 +1,8 @@
 function [ref_XY] = test()
-addpath('/Users/adamp/Research/Matlab/calib_example/face-release1.0-basic/');
+% lfwDir = '/Users/adamp/Research/test/lfw/aligned_deepid/';
+lfwDir = '/media/data/datasets/LFW/lfw_aligned_deepid/';
+
+addpath('../img_preproc/face-release1.0-basic/');
 % load and visualize model
 % Pre-trained model with 146 parts. Works best for faces larger than 80*80
 load face_p146_small.mat
@@ -15,7 +18,7 @@ if length(model.components)~=13 && length(model.components)~=18
 end
 
 figure;
-im = imread('/Users/adamp/Research/test/lfw/aligned_deepid/John_Manley/John_Manley_0003.jpg'); 
+im = imread(fullfile(lfwDir, 'John_Manley/John_Manley_0003.jpg')); 
 hold on; 
 
 t = detect(im, model, -0.65); 

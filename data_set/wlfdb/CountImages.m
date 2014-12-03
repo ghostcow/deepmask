@@ -1,24 +1,28 @@
 clear variables;
 mainDir = 'faceleb_profile_images';
 images = dir(fullfile(mainDir, '*.jpg'));
-fprintf('#persons with profile image=%d\n', length(images));
-noImages = 0;
+nProgilePics = length(images);
+
+fprintf('#persons with profile image=%d\n', nProgilePics);
+imagesPerPerson = zeros(1,40000);
 for iImage = 1:length(images)
    imageName = images(iImage).name;
    figName = imageName(1:end-4);
+   num = str2double(figName(1:5));
+   imagesPerPerson(num) = 1;
+   
    figImages = dir(fullfile(mainDir, figName, '*.jpg'));
-   if isempty(figImages)
-       noImages = noImages + 1;
-   end
+   imagesPerPerson(num) = imagesPerPerson(num) + length(figImages);
 end
-fprintf('#persons with no more images=%d\n', noImages);
-fprintf('#persons with more than 1 image=%d\n', length(images) - noImages);
+nProfileAndMorePics = sum(imagesPerPerson > 1);
+fprintf('#persons with profile pic and more=%d\n', nProfileAndMorePics);
 
-% figDirs = dir(mainDir);
-% figDirs = figDirs(3:end);
-% for iDir = 1:length(figDirs)
-%    images = dir(fullfile(mainDir, figDirs(iDir).name));
-%    if isempty(images)
-%        rmdir(fullfile(mainDir, figDirs(iDir).name));
-%    end
-% end
+figDirs = dir(mainDir);
+figDirs = figDirs(3:end);
+fprintf('#persons without profile image=%d\n', length(figDirs) - nProfileAndMorePics);
+for iDir = 1:length(figDirs)
+    num = str2double(figDirs(iDir).name(1:5));
+    if (imagesPerPerson(num) == 0)
+        imagesPerPerson(num) = length(dir(fullfile(mainDir, figDirs(iDir).name, '*.jpg')));
+    end
+end

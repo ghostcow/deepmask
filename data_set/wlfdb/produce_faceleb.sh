@@ -1,1 +1,1 @@
-python ReadProfileImages.py names/names_faceleb.txt faceleb_profile_images $1 $2
+python ReadProfileImages.py names/names_urls_faceleb_1986_1994.txt images_1986_1994 $1 $2

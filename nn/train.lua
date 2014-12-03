@@ -264,6 +264,7 @@ for iChunk = 1,trainData.numChunks do
             end
 
             local numInputs = inputs:size()[1]
+            targets = targets:cuda()
             local err = criterion:forward(output, targets)
 
             -- f is the average of all criterions

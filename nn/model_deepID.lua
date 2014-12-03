@@ -14,8 +14,11 @@ require 'deep_id_utils'
 require 'math'
 
 -- extract patch scale
-iPatch,iScale = DeepIdUtils.parsePatchIndex(opt.patchIndex)
-imageDim = DeepIdUtils.patchSizeTarget[iScale]
+iPatch,iScale,iType = DeepIdUtils.parsePatchIndex(opt.patchIndex)
+imageDim = DeepIdUtils.patchSizeTarget[(iType - 1)*DeepIdUtils.numScales + iScale]
+if (type(imageDim) == 'table') then
+    imageDim = imageDim[1]
+end
 
 -- only rgb patches are supported for now
 local inputDim = 3
@@ -25,12 +28,11 @@ featureDim = 160
 -- filter sizes & number of maps for layers C1,C2,C3,C4
 -- these sizes changes according to input dimension
 -- the output of M3 (for model subModelType='3') is fixed to 32x2x2
-if (imageDim == 31) then
+if (imageDim == 31) or (imageDim == 39) or (imageDim == 47) then
     filtersSize = {4, 3, 3, 2}
-elseif (imageDim == 45) then
+elseif (imageDim == 45) or (imageDim == 53) or (imageDim == 61) then
     filtersSize = {6, 5, 5, 4}
-elseif (imageDim == 59) then
-    -- 32x3x3
+elseif (imageDim == 59) or (imageDim == 67) or (imageDim == 75) then
     filtersSize = {8, 7, 7, 6}
 end
 
