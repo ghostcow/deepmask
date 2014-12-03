@@ -3,7 +3,7 @@ import re
 import sys
 
 year = int(sys.argv[1]);
-outputFilePath = '../names/people_%d.txt'%year
+outputFilePath = 'names/people_%d.txt'%year
 print(outputFilePath)
 
 getListUrl = 'http://www.imdb.com/search/name?birth_date=%d,%d&count=100'

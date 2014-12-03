@@ -6,9 +6,9 @@ names = {};
 urls = {};
 locs = [];
 years = [];
-for iFile = 1:length(peopleFiles)
+for iFile = 12:length(peopleFiles)
     year = str2double(peopleFiles(iFile).name(end-7:end-4));
-    fid = fopen(peopleFiles(iFile).name);
+    fid = fopen(fullfile('names', peopleFiles(iFile).name));
     C = textscan(fid, '%s %s', 'Delimiter', ',');
     fclose(fid);
     
@@ -62,14 +62,14 @@ years = years(indices);
 urls = urls(indices);
 
 % input file for imdb download script
-fid = fopen('names_faceleb.txt', 'w');
+fid = fopen('names/names_faceleb_1986_1994.txt', 'w');
 for iName = 1:length(names)
     fprintf(fid, '%d\t%s\t%s\n', years(iName), names{iName}, [imdbUrl, urls{iName}]);
 end
 fclose(fid);
 
 % input file for google download script
-fid = fopen('../google/names_faceleb.txt', 'w');
+fid = fopen('../google/names_faceleb_1986_1994.txt', 'w');
 for iName = 1:length(names)
     fprintf(fid, '%s\n', names{iName});
 end
