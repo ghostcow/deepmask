@@ -1,4 +1,7 @@
-function warped_image = piecewise_affine(current_shape, base_shape, input_image, varargin)
+function warped_image = piecewise_affine(current_shape, ...
+                                         base_shape, ...
+                                         input_image, ...
+                                         varargin)
 % Piecewise affine warp
 % It is based on nearest neighbour interpolation
 % Output: the warped warped shape
@@ -18,7 +21,19 @@ parse(p,varargin{:});
 opt = p.Results;
 visualize = opt.visualize;
 
-triangles = delaunay(base_shape(:,1), base_shape(:,2));
+% triangles = delaunay(base_shape(:,1), base_shape(:,2));
+constraints = [(16:19)' (17:20)'; 
+               20 31; 
+               (31:-1:28)' (30:-1:27)';
+               27 68;
+               (68:-1:62)' (67:-1:61)';
+               61 52;
+               (52:59)' (53:60)';
+               60 16];
+dt = delaunayTriangulation(base_shape(:,1),base_shape(:,2),constraints);  
+isInside = isInterior(dt);
+triangles = [dt(isInside,:); dt(~isInside,:)];
+
 num_of_triangles = size(triangles, 1);
 
 if visualize
