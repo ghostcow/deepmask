@@ -36,6 +36,7 @@ function getFaceFeatures(imagePaths, model, featureLayerIndex, mode)
     if (mode == nil) then
         mode = 1
     end
+    model:evaluate() -- turn off all dropouts
 
     function processBatch(batchImagesPaths)
         inputs = torch.Tensor(batchSize, 3, imageDim[1], imageDim[2])

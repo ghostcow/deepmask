@@ -1,17 +1,9 @@
-% QUESTIONS :
-% 1. what are targetPeopleX,targetPeopleSplitId, targetPeopleY ? (relevant only when RESTRICTED = false)
-%
-% guess -
-% targetPeopleX is the people.txt data (unrestricted) with the appropriate
-% targetPeopleSplitId/targetPeopleY indicating split id and labels
 clear variables; close all; clc;
 addpath('../../liblinear-1.94/matlab');
 addpath('tools');
 
-lfwDir = '/media/data/datasets/LFW';
-pairsFilePath = fullfile(lfwDir, '/view2/pairs.txt');
-peopleFilePath = fullfile(lfwDir, '/view2/people.txt');
 type = 'deepid'; % type od the face images : deepface / deepid
+resultType = 5; % look at GetResultFilePaths for options
 
 %% constants 
 % lfw configuration : restricted/unrestrcited
@@ -22,7 +14,8 @@ svmParams = struct('type', 1, 'C', 1); % original values : type=3, C=0.05
 % finalTestMethod : 
 % 1 = liblinear train & predict, 2 = liblinear train & our predict, 3 = choosing best threshold based on training
 finalTestMethod = 3; 
-maxNumNets = 15; % we can test accuracy if we use only some of the nets
+% profile image - 20/25/30
+netIndices = [];  % we can also test accuracy when using only some of the nets
 
 if strcmp(type, 'deepface')
     lfwPeopleImagesFilePath = '../data_files/LFW/people.mat'; % relevant only when RESTRICTED = false
@@ -31,7 +24,7 @@ elseif strcmp(type, 'deepid')
 end
 
 [resDir, lfwpairsResFileName, lfwpeopleResFileName, verificationResFileName, verificationImagesFilePath] = ...
-    GetResultFilePaths(3);
+    GetResultFilePaths(resultType);
 
 recognitionResDir = fullfile(resDir, 'recognition');
 if ~exist(recognitionResDir, 'dir')
@@ -48,12 +41,15 @@ verificationFeaturesLabels = C{2};
 
 % loading verification set features
 verificationResFiles = dir(fullfile(resDir, verificationResFileName));
-nFiles = length(verificationResFiles);
-nFiles = min(nFiles, maxNumNets);
 % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
 verificationFeatures = [];
-for iFile = 1:nFiles
-    S = load(fullfile(resDir, verificationResFiles(iFile).name));
+if isempty(netIndices)
+    netIndices = 1:length(verificationResFiles);
+end
+nFiles = length(netIndices);
+iFile = 1;
+for netIndex = netIndices
+    S = load(fullfile(resDir, verificationResFiles(netIndex).name));
     if isempty(verificationFeatures)
         subFeatureDim = size(S.x, 1);
         featureDim = nFiles*subFeatureDim;
@@ -62,17 +58,31 @@ for iFile = 1:nFiles
     
     subFeatureIndex = 1 + (iFile - 1)*subFeatureDim;
     verificationFeatures(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x;
+    iFile = iFile + 1;
 end
 sourceX = verificationFeatures';
 sourceY = verificationFeaturesLabels';
 
 %% Loading LFW data (target domain)
 [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(...
-    fullfile(resDir, lfwpairsResFileName), maxNumNets);
+    fullfile(resDir, lfwpairsResFileName), netIndices);
+% NOTE : this is illegal but just checking the results when not using the bad images
+% validPairsIndices = find((sum(targetX1.^2) > 0) & (sum(targetX2.^2) > 0));
+% targetX1 = targetX1(:, validPairsIndices);
+% targetX2 = targetX2(:, validPairsIndices);
+% targetY = targetY(validPairsIndices);
+% targetSplitId = targetSplitId(validPairsIndices);
+
 if ~RESTRICTED
     % load by people (based on people.txt)
     [targetPeopleX, targetPeopleY, targetPeopleSplitId] = LoadLfwPeople(...
-        fullfile(resDir, lfwpeopleResFileName), lfwPeopleImagesFilePath, maxNumNets);
+        fullfile(resDir, lfwpeopleResFileName), lfwPeopleImagesFilePath, netIndices);
+    
+    % images with lable=0 are invalid (face detections has been failed)
+    validImagesIndices = find(targetPeopleY > 0);
+    targetPeopleX = targetPeopleX(:, validImagesIndices);
+    targetPeopleY = targetPeopleY(validImagesIndices);
+    targetPeopleSplitId = targetPeopleSplitId(validImagesIndices);
 end
 
 %% PCA & joint-bayesian model learning over the source domain
@@ -115,6 +125,7 @@ end
 targetJbModels = cell(1);
 jbScores = [];
 accuracies = [];
+bestThs = [];
 
 lambdarange = [1.35]; % not the first parameter I tried
 fprintf('\nstart testing...\n');
@@ -210,7 +221,8 @@ for i = [5,setdiff(1:10,5)]
                     accuracyPerTh = (numPos - scoresPosCdf + scoresNegCdf)/(numPos + numNeg);
                     [maxAccuracy, thIndex] = max(accuracyPerTh);
                     bestTh = thValues(thIndex+1);
-
+                    bestThs(k,i) = bestTh;
+                    
                     matchDetections = testData > bestTh;
                     matchDetections = 2*(matchDetections - 0.5);
                     accuracies(k,i) = mean(matchDetections == testLabels')

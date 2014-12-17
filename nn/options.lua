@@ -20,6 +20,7 @@ function getOptions()
 	-- data:
 	cmd:option('--dataPath', '../data_files/CFW_flat/cfw_flat.t7', 'path to dataset file (mat or t7)')
     cmd:option('--useDatasetChunks', false, 'read datasets in chunks')
+    cmd:option('--numPassesPerChunk', 1, 'how many passes to do over one chunk before loading the next one')
 
 	-- training:
 	cmd:option('--save', '../results', 'subdirectory to save/log experiments in')
@@ -27,6 +28,11 @@ function getOptions()
     cmd:option('--balanceClasses', false, 'whether to use balance cost for classes in the NLL criterion')
     cmd:option('--freezeLayers', '', 'layers indices (seperated by comma) whose parameters will not be updated during training')
     cmd:option('--trainOnly', false, 'whether to use all data for training (with no test phase at all)')
+    cmd:option('--loss', 'identification', 'which loss function to use (identification/combined)')
+
+    -- verification (contrastive) cost
+    cmd:option('--lambda', 0.05, 'verification cost weight')
+    cmd:option('--margin', 100, 'initial margin in the verification cost')
 
 	-- optimization parameters (same as Krizhevsky ImageNet)
 	cmd:option('--learningRate', 0.01, 'learning rate at t=0')

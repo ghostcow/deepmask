@@ -12,28 +12,39 @@ function [resDir, lfwpairsResFileName, lfwpeopleResFileName, verificationResFile
 %       The training data is CFW+PubFig+SUFR, after subtracting some LFW
 %       identities.
 
-% deepface type patches (152x152)
+if (resIndex == 1)
+    lfwpairsResFileName = 'deepid_LFW_pairs_patch*';
+    lfwpeopleResFileName = 'deepid_LFW_people_patch*';
+    verificationResFileName = 'deepid_CPS_verification_patch*';
+else
+    lfwpairsResFileName = 'LFW_pairs_patch*';
+    lfwpeopleResFileName = 'LFW_people_patch*';
+    verificationResFileName = 'verification_patch*';    
+end
+
+if (resIndex <= 2)
+    % deepface type patches (152x152)
+    verificationImagesFilePath = '../data/deepId/CFW_PubFig_SUFR/images_verification.txt';
+else
+    % deepid type patches (containing more background)
+    verificationImagesFilePath = '../data/deepId_full/CFW_PubFig_SUFR/images_verification.txt'; 
+end
+
 switch resIndex
     case 1
         % PAY ATTENTION : bad results, becuase some LFW identities were
         % used for training
         resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_dropout_flipped';
-        lfwpairsResFileName = 'deepid_LFW_pairs_patch*';
-        lfwpeopleResFileName = 'deepid_LFW_people_patch*';
-        verificationResFileName = 'deepid_CPS_verification_patch*';
-        verificationImagesFilePath = '../data/deepId/CFW_PubFig_SUFR/images_verification.txt';
     case 2
         % PAY ATTENTION : bad results, becuase some LFW identities were
         % used for training        
         resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_dropout_flipped_ReLu';
-        lfwpairsResFileName = 'LFW_pairs_patch*';
-        lfwpeopleResFileName = 'LFW_people_patch*';
-        verificationResFileName = 'verification_patch*';
-        verificationImagesFilePath = '../data/deepId/CFW_PubFig_SUFR/images_verification.txt';    
     case 3
-        resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_15patches/features';
-        lfwpairsResFileName = 'LFW_pairs_patch*';
-        lfwpeopleResFileName = 'LFW_people_patch*';
-        verificationResFileName = 'verification_patch*';
-        verificationImagesFilePath = '../data/deepId_full/CFW_PubFig_SUFR/images_verification.txt';           
+        resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.30_15patches/features_1_12';
+    case 4
+        resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_30patches/features_8_12';
+    case 5
+        resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_30patches_noRELU/features';
+    case 6
+        resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.160_30patches/features';        
 end

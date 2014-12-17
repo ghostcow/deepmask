@@ -3,6 +3,8 @@ function [rw] = jointBayesianC(X1, X2, model)
 % 
 % INPUTS : 
 %   X1,X2 - featues matrices to compare, each of dimension [d x N]
+%           in case X1 is only one feature than it's compared against all
+%           features in X2
 %   model - the joint-bayesian model (learned by calling jointBayesian)
 % OUTPUTs : 
 %   rw - classification scores for each pair (high value for match  & low
@@ -11,5 +13,11 @@ function [rw] = jointBayesianC(X1, X2, model)
 %       Hi is intra-personal variation hypothesis, while 
 %       He is the extra-personal variation hypothesis
 
-rw = X1'*model.A*X1 + X2'*model.A*X2 - 2*X1'*model.G*X2;
-rw = diag(rw); %need only diag values of rw matrix.
+if (size(X1, 2) == 1)
+    rw = X1'*model.A*X1 + diag(X2'*model.A*X2)' - 2*X1'*model.G*X2;
+else
+    rw = X1'*model.A*X1 + X2'*model.A*X2 - 2*X1'*model.G*X2;
+    rw = diag(rw); %need only diag values of rw matrix.
+end
+
+

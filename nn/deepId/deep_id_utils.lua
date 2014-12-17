@@ -12,6 +12,7 @@ if not opt then
 end
 
 DeepIdUtils = {}
+DeepIdUtils.verbose = false
 
 -- currently we support only one scale & square rgb patch
 -- support 3 scales x 10 patches, each scale has 3 patched types : square,frame,profile
@@ -180,8 +181,10 @@ function DeepIdUtils.getPatch(images, patchIndex, useFlipped)
     patchBorders = DeepIdUtils.patchBordes[{{},patchIndex}]
     iPatch,iScale,iType = DeepIdUtils.parsePatchIndex(patchIndex)
     patchSizeTarget = DeepIdUtils.patchSizeTarget[(iType - 1)*DeepIdUtils.numScales + iScale]
-    print('DeepIdUtils.getPatch : index=', patchIndex, 'iPatch=', iPatch, 'iScale=', iScale, 'iType=', iType)
-    print('patch size = ', patchSizeTarget)
+    if DeepIdUtils.verbose then
+        print('DeepIdUtils.getPatch : index=', patchIndex, 'iPatch=', iPatch, 'iScale=', iScale, 'iType=', iType)
+        print('patch size = ', patchSizeTarget)
+    end
 
     -- crop patches centered in center
     patches = images[{{},{},{patchBorders[1], patchBorders[2]},

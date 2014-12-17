@@ -27,36 +27,17 @@ print '==> executing all'
 dofile 'data_patch.lua'
 
 dofile('../model_deepID.lua')
-dofile('../train.lua')
-if not opt.trainOnly then
-    dofile('../test.lua')
-end
-
---- check data validity before starting
--- data
-for iChunk = 1,trainData.numChunks do
-    trainDataChunk = trainData.getChunk(iChunk)
-    -- shuffle at each epoch
-    for t = 1,trainDataChunk:size(),opt.batchSize do
-        -- create mini batch
-        local inputs = torch.Tensor(opt.batchSize, 3, imageDim, imageDim)
-        local targets = torch.Tensor(opt.batchSize)
-        if ((t+opt.batchSize-1) > trainDataChunk:size()) then
-            -- we don't use the last samples
-            break
-        end
-        for i = t,(t+opt.batchSize-1) do
-            inputs[{i-t+1}] = trainDataChunk.data[i]
-            targets[{i-t+1}] = trainDataChunk.labels[i]
-        end
-        assert(isValid(targets), "non-valid targets")
-        assert(isValid(inputs), "non-valid inputs")
-        inputs = inputs:cuda()
-        assert(isValid(inputs), "non-valid cuda inputs")
+if (opt.loss == 'identification') then
+    dofile('../train.lua')
+    if not opt.trainOnly then
+        dofile('../test.lua')
+    end
+elseif (opt.loss == 'combined') then
+    dofile('../train_identification_verification.lua')
+    if not opt.trainOnly then
+        dofile('../test_identification_verification.lua')
     end
 end
--- model
-assert(isValid(parameters), "non-valid model parameters")
 
 ----------------------------------------------------------------------
 if not opt.debugOnly then

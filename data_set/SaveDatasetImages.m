@@ -7,12 +7,20 @@ randomPermutation = false;
 maxImagesPerFile = 5000; % relevant only if useDifferentFiles=true
 
 %% change values here
-name = 'cfw_pubfig_sufr';
+name = 'casia';
 if strcmp(name, 'cfw_pubfig_sufr')
     inputFilePath = '../data/deepId_full/CFW_PubFig_SUFR/images';
     outputFilePathFormat = '../data_files/deepId_full/CFW_PubFig_SUFR/CFW_PubFig_SUFR';
     useDifferentFiles = true;
     scaleFactor = 0.5;
+elseif strcmp(name, 'casia')
+    inputFilePath = '../data/deepId_full/CASIA/images';
+    outputFilePathFormat = '../data_files/deepId_full/CASIA/CASIA';
+    useDifferentFiles = true;
+    scaleFactor = 0.5;    
+    % the training will be done in these batches
+    maxImagesPerFile = 15000; 
+    randomPermutation = true;
 end
 
 % input txt files

@@ -1,7 +1,6 @@
-function peopleMetadata = GetPeopleData(filePath)
-    if ~exist('filePath', 'var')
-        filePath = '/media/data/datasets/LFW/view2/people.txt';
-    end
+function peopleMetadata = GetPeopleData()
+    currFunDir = fileparts(mfilename('fullpath'));
+    filePath = fullfile(currFunDir, 'lfw_protocols', 'people.txt');
     
     peopleMetadata = {};
     

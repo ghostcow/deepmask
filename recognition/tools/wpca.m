@@ -18,6 +18,7 @@ if isempty(PCAModel)
     sparams.do_PCA_only = true;
 else
     sparams.do_PCA_only = false;
+    outputDim = size(PCAModel.full_proj, 2);
 end
 
 if(issparse(X))

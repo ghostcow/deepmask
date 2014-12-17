@@ -184,7 +184,7 @@ elseif (subModelType == '1scale') then
     model:add(nn.View(-1, outputSize):setNumInputDims(2))
     model:add(nn.Linear(outputSize, featureDim))
 end
-model:add(nn.ReLU()) --activation function for the previous fully-connected layer
+-- model:add(nn.ReLU()) --activation function for the previous fully-connected layer
 
 -- Final layer F6 - classification into class out of nLabels classses
 model:add(nn.Dropout())
@@ -194,28 +194,6 @@ print '==> here is the model:'
 print(model)
 
 ----------------------------------------------------------------------
-print '==> initalizing weights'
-if false then
-for _, layerId in pairs(layersIds) do
-    print(layerId)
-    model:get(layerId).weight:normal(0, 0.01)
-    model:get(layerId).bias:fill(0.5)
-end
-
-if multiScaleLayerId then
-    for iMultiScaleBranch = 1,2 do
-        local multiScaleLayerIds = multiScaleTrainableLayerIds[iMultiScaleBranch]
-        for iTrainableLayer = 1,#multiScaleLayerIds do
-            local layerId = multiScaleLayerIds[iTrainableLayer]
-            model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).weight:normal(0, 0.01)
-            model:get(multiScaleLayerId):get(iMultiScaleBranch):get(layerId).bias:fill(0.5)
-        end
-    end
-end
-else
-print 'using default layers initialization!'
-end
-
 if opt.visualize then
     require 'gfx.js'
     print '==> visualizing filters'

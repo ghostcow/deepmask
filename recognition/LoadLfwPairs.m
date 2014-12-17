@@ -1,4 +1,4 @@
-function [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(resFilePath, maxNumNets)
+function [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(resFilePath, netIndices)
 % load features for LFW pairs images (as decalred in pairs.txt)
 % INPUT
 %   resFilePath - path to features file or a pattern of more than 1 file (for
@@ -8,8 +8,8 @@ function [targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(resFilePath
 %   targetY - label for each pair (1/-1)
 %   targetSplitId - split id (1-10) for each pair
 
-if ~exist('maxNumNets', 'var')
-    maxNumNets = inf;
+if ~exist('netIndices', 'var')
+    netIndices = [];
 end
 
 % constants
@@ -21,13 +21,17 @@ nPairs = numFolds*numPairsPerFold*2;
 lfwpairsResFiles = dir(resFilePath);
 resFileRoot = fileparts(resFilePath);
 nFiles = length(lfwpairsResFiles);
-nFiles = min(nFiles, maxNumNets);
+if isempty(netIndices)
+    netIndices = 1:nFiles;
+end
+nFiles = length(netIndices);
 
 % final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
 targetX1 = []; 
 targetX2 = [];
-for iFile = 1:nFiles
-    S = load(fullfile(resFileRoot, lfwpairsResFiles(iFile).name));
+iFile = 1;
+for netIndex = netIndices
+    S = load(fullfile(resFileRoot, lfwpairsResFiles(netIndex).name));
     if isempty(targetX1)
         subFeatureDim = size(S.x, 1);
         featureDim = nFiles*subFeatureDim;
@@ -37,6 +41,7 @@ for iFile = 1:nFiles
     subFeatureIndex = 1 + (iFile - 1)*subFeatureDim;
     targetX1(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x(:, 1:2:end);
     targetX2(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x(:, 2:2:end);
+    iFile = iFile + 1;
 end
 
 targetY = zeros(nPairs, 1);

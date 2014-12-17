@@ -16,6 +16,11 @@ nImages = length(imagePaths);
 for iDetection = 1:nImages
     % cut aligned image path and save only [figure_name]/[image_name]
     alignedImagePath = alignedImagePaths{iDetection};
+    if strncmp(computer, 'GLNXA', 5)
+        % linux system
+        alignedImagePath = strrep(alignedImagePath, '\', '/');
+    end
+    
     [temp, alignedImageName, ext1] = fileparts(alignedImagePath);
     [~, figureName, ext2] = fileparts(temp);
     % NOTE : if the figure name has dots than it's considered as ext

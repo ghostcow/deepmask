@@ -5,7 +5,7 @@ clear variables;
 clc;
 
 %% change values here
-name = 'cfw_pubfig_sufr';
+name = 'casia';
 % defining minimum & maximum samples per person (relevant only for the nn training)
 samplesPerPerson = [0 inf]; % take all images
 verificationPerc = 0; % how many persons will be used for learning the verification model
@@ -28,6 +28,12 @@ elseif strcmp(name, 'cfw_pubfig_sufr')
     dirIndices = 1:5; 
     samplesPerPerson = [14 40]; 
     verificationPerc = 0.2;
+elseif strcmp(name, 'casia')
+    type = 'deepid'; % different size of images
+    outputFilePath = '../data/deepId_full/CASIA/images';
+    dirIndices = 8; 
+    samplesPerPerson = [0 inf]; 
+    verificationPerc = 0;
 end
 
 mkdir(fileparts(outputFilePath));

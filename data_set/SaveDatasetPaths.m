@@ -2,8 +2,8 @@
 % format is : [image path],[label]
 
 %% change paths here
-mainDirs = {'/media/data/datasets/CFW/filtered_aligned_network/byFigure', '/media/data/datasets/CFW/filtered_aligned_small'};
-outputFilePath = '../data/CFW_clean/images';
+mainDirs = {'/media/data/datasets/CFW/aligned_deepid'}; %{'/media/data/datasets/CFW/filtered_aligned_network/byFigure', '/media/data/datasets/CFW/filtered_aligned_small'};
+outputFilePath = '../data/deepId/temp_images'; %'../data/CFW_clean/images';
 
 % output txt files
 outputFilePathTrain = [outputFilePath '_train.txt'];
@@ -13,7 +13,7 @@ outputFilePathTest = [outputFilePath '_test.txt'];
 trainPerc = 0.75;
 
 % optional - defining minimum & maximum samples per person
-trainingSamples = [0 200]; % use [0 inf] to take all images
+trainingSamples = [0 10]; % use [0 inf] to take all images
 maxTestSamples = ceil(trainingSamples(2)*(1-trainPerc));
 
 nPersonsTot = 0;
