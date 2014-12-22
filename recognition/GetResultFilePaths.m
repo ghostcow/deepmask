@@ -47,4 +47,7 @@ switch resIndex
         resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.64_30patches_noRELU/features';
     case 6
         resDir = '../results_deepid/CFW_PubFig_SUFR_deepID.3.160_30patches/features';        
+    case 7
+        resDir = '../results_deepid/CASIA_deepID.3.64/22_12/features';  
+        verificationImagesFilePath = '../data_files/deepId_full/CASIA/CASIA_verification.mat'; 
 end

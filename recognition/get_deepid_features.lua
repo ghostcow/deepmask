@@ -50,7 +50,15 @@ for modelDirName in io.popen('ls -a "'..opt.save..'"'):lines() do
     if (#modelDirName > #'patch' and (modelDirName:sub(1,#'patch') == 'patch')) then
     print('valid directory')
     modelDirPath = paths.concat(opt.save, modelDirName)
-    model = torch.load(paths.concat(modelDirPath, 'model.net'))
+    state_file_path_best = paths.concat(modelDirPath, 'model_best.net')
+    state_file_path = paths.concat(modelDirPath, 'model.net')
+    if paths.filep(state_file_path_best) then
+        print('Loading saved best model...')
+        model = torch.load(state_file_path_best)
+    else
+        model = torch.load(state_file_path)
+    end
+
     model:evaluate() -- turn off all dropouts
     featureLayerIndex = #(model.modules) - 3 -- last 3 layers : dropout, fully conected, log
 

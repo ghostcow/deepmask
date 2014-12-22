@@ -10,7 +10,7 @@ require 'optim'   -- an optimization package, for online and batch methods
 
 ----------------------------------------------------------------------
 print '==> defining test procedure'
-
+accuracyTest = 0
 -- test function
 function test()
     -- turn off dropout modules
@@ -67,7 +67,9 @@ function test()
 
     -- print confusion matrix values
     confusion:updateValids()
-    print("accuracy = ", confusion.totalValid * 100)
+    accuracyTest = confusion.totalValid * 100
+    print("accuracy = ", accuracyTest)
+
     local filename_confusion = paths.concat(opt.save, 'confusion_test')
     torch.save(filename_confusion, confusion)
     testLogger:add{['% total accuracy'] = confusion.totalValid * 100,

@@ -2,6 +2,7 @@ function initializeTrainTools()
     -- defining output paths
     state_file_path = paths.concat(opt.save, 'model.net')
     state_file_last_path = paths.concat(opt.save, 'model_last.net')
+    state_file_path_best = paths.concat(opt.save, 'model_best.net')
     train_log_path = paths.concat(opt.save, 'train.log')
     test_log_path = paths.concat(opt.save, 'test.log')
 

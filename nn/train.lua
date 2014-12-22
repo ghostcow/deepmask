@@ -9,6 +9,8 @@ require 'validate_data'
 require 'balance_classes'
 require 'freeze_layers'
 require 'train_utils'
+require 'cunn'
+require 'cutorch'
 
 useAssert = true
 ----------------------------------------------------------------------
@@ -28,29 +30,19 @@ else
 end
 criterion:cuda()
 
-if not opt.loadState then
-    -- if model already exist, ask user before overwrite
-    if paths.filep(state_file_path) then --check if model file exist
-        while true do
-            io.stdout:write('Model file ', state_file_path, ' already exist. Sure you want to overwrite? [y/n]')
-            ans = io.stdin:read()
-            if (ans == 'y') then
-                break
-            elseif (ans == 'n') then
-                os.exit()
-            end
-        end
-    end
-
-    print '==> changing model to CUDA'
-    model:add(nn.LogSoftMax())
-    model:cuda()
-else
+-- load pre-trained model if exist
+if paths.filep(state_file_path_best) then
+    print '==> loadind pre-trained network (best)'
+    model = torch.load(state_file_path_best)
+    print '==> model :'
+    print(model)
+elseif paths.filep(state_file_path) then
     print '==> loadind pre-trained network'
     model = torch.load(state_file_path)
     print '==> model :'
     print(model)
 end
+
 ----------------------------------------------------------------------
 print '==> defining some tools'
 
@@ -71,6 +63,8 @@ end
 ----------------------------------------------------------------------
 print '==> defining training procedure'
 function train()
+
+model:training()
 
 -- epoch tracker
 epoch = epoch or 1

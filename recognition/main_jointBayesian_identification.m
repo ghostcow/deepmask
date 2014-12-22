@@ -4,9 +4,9 @@ clear variables; clc;
 disyType = 'jb'; % jb / L2 / cosine
 useGpu = true;
 
-resultType = 5;
+resultType = 7;
 resultName = '.';
-netIndices = 1:10;
+netIndices = 1:15;
 
 % resultType = 4;
 % resultName = 'patch_1_30';

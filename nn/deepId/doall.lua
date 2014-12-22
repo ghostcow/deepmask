@@ -40,12 +40,22 @@ elseif (opt.loss == 'combined') then
 end
 
 ----------------------------------------------------------------------
+-- run test to get current best accuracy
+test()
+bestAccuracy = accuracyTest
+print('bestAccuracy='..bestAccuracy)
+--
 if not opt.debugOnly then
     print '==> training!'
     while true do
         train()
         if not opt.trainOnly then
             test()
+            if (accuracyTest > bestAccuracy) then
+                bestAccuracy = accuracyTest
+                print('bestAccuracy='..bestAccuracy)
+                torch.save(state_file_path_best, model)
+            end
         end
     end
 end

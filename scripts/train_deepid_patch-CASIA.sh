@@ -8,4 +8,4 @@ output_dir_name=$output_dir_name/$patch_dir
 echo $output_dir_name
 
 model_name='model_deepID.3.64'
-th doall.lua --useDatasetChunks --numPassesPerChunk 1 --deepIdMode 2 --patchIndex $patch_index --dataPath $data_path --save $output_dir_name --modelName $model_name --learningRate 0.01 --batchSize 64
+th doall.lua --useDatasetChunks --numPassesPerChunk 1 --deepIdMode 2 --patchIndex $patch_index --dataPath $data_path --save $output_dir_name --modelName $model_name --learningRate 0.001 --batchSize 64

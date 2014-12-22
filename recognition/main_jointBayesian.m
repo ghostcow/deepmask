@@ -3,7 +3,7 @@ addpath('../../liblinear-1.94/matlab');
 addpath('tools');
 
 type = 'deepid'; % type od the face images : deepface / deepid
-resultType = 5; % look at GetResultFilePaths for options
+resultType = 7; % look at GetResultFilePaths for options
 
 %% constants 
 % lfw configuration : restricted/unrestrcited
@@ -34,10 +34,15 @@ recognitionResPath = fullfile(recognitionResDir, 'LFW_verification_results.txt')
 
 %% loading Verification data (source domain)
 % sourceX - data, sourceY - labels
-fid = fopen(verificationImagesFilePath);
-C = textscan(fid, '%s %d', 'Delimiter', ',');
-fclose(fid);
-verificationFeaturesLabels = C{2};
+if strcmp(verificationImagesFilePath(end-2:end), 'txt')
+    fid = fopen(verificationImagesFilePath);
+    C = textscan(fid, '%s %d', 'Delimiter', ',');
+    fclose(fid);
+    verificationFeaturesLabels = C{2};
+elseif strcmp(verificationImagesFilePath(end-2:end), 'mat')
+    S = load(verificationImagesFilePath, 'labels');
+    verificationFeaturesLabels = S.labels;
+end 
 
 % loading verification set features
 verificationResFiles = dir(fullfile(resDir, verificationResFileName));
@@ -203,7 +208,7 @@ for i = [5,setdiff(1:10,5)]
                     accuracies(k,i) = mean(ry == testLabels)
                 case 3
                     % the data is 1D, so all we need to find is the best TH
-                    thValues = min(trainData):max(trainData);
+                    thValues = sort(trainData); %min(trainData):max(trainData);
                     numPos = sum(trainLabels == 1);
                     numNeg = sum(trainLabels == -1);
                     scoresPosPdf = histc(trainData(trainLabels == 1), thValues);
