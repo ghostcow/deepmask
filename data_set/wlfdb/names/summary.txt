@@ -1,0 +1,9 @@
+FaCeleb 
+
+part1 : 1975-1994 (IMDB p1 : 1975-1985, p2 : 1985-1994)
+part2 : leftovers from WLFDB
+part3 : 1950-1974
+
+training images - downloaded from google
+reteival evaluation (only part1) - downloaded from IMDB (might be obsolete eventually)
+
