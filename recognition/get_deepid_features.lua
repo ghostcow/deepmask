@@ -22,6 +22,7 @@ for iArg = 2,#arg do
 end
 opt = getOptions()
 opt.save = paths.concat('../results_deepid/', opt.save)
+useFlippedPatches = opt.useFlippedPatches
 
 print('Loading input data :', opt.dataPath)
 dataSet = mattorch.load(opt.dataPath)

@@ -50,4 +50,7 @@ switch resIndex
     case 7
         resDir = '../results_deepid/CASIA_deepID.3.64/22_12/features';  
         verificationImagesFilePath = '../data_files/deepId_full/CASIA/CASIA_verification.mat'; 
+    case 8
+        resDir = '../results_deepid/CASIA_deepID.3.64/23_12/features';  
+        verificationImagesFilePath = '../data_files/deepId_full/CASIA/CASIA_verification.mat';        
 end

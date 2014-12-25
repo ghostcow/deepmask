@@ -4,7 +4,7 @@ clear variables; clc;
 disyType = 'jb'; % jb / L2 / cosine
 useGpu = true;
 
-resultType = 7;
+resultType = 8;
 resultName = '.';
 netIndices = 1:15;
 

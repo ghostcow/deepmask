@@ -28,7 +28,7 @@ if opt.balanceClasses then
 else
     criterion = nn.ClassNLLCriterion()
 end
-criterion:cuda()
+-- criterion:cuda()
 
 -- load pre-trained model if exist
 if paths.filep(state_file_path_best) then
@@ -41,6 +41,9 @@ elseif paths.filep(state_file_path) then
     model = torch.load(state_file_path)
     print '==> model :'
     print(model)
+else
+    model:add(nn.LogSoftMax())
+    model:cuda()
 end
 
 ----------------------------------------------------------------------
@@ -81,6 +84,8 @@ local timeLoad
 local trainDataChunk
 for iChunk = 1,trainData.numChunks do
     timeLoad = sys.clock()
+    trainDataChunk = nil
+    collectgarbage()
     trainDataChunk = trainData.getChunk(iChunk)
 
     timeLoad = sys.clock() - timeLoad
@@ -96,7 +101,7 @@ for iChunk = 1,trainData.numChunks do
             xlua.progress(t, chunkSize)
 
             -- create mini batch
-            local inputs = torch.Tensor(opt.batchSize, 3, imageDim, imageDim)
+            local inputs = torch.Tensor(opt.batchSize, nInputsPlane, imageDim, imageDim)
             local targets = torch.Tensor(opt.batchSize)
 
             for i = t,(t+opt.batchSize-1) do
@@ -110,7 +115,7 @@ for iChunk = 1,trainData.numChunks do
             --print('GPU free memory :'..tostring(a.freeGlobalMem / a.totalGlobalMem))
             -- print(inputs:size())
             inputs = inputs:cuda()
-            targets = targets:cuda()
+            -- targets = targets:cuda()
 
             -- create closure to evaluate f(X) and df/dX
             local feval = function(x)
@@ -127,7 +132,7 @@ for iChunk = 1,trainData.numChunks do
                 -- evaluate function for complete mini batch
                 -- estimate f
                 MyAssert(isValid(inputs), "there are some nan's in inputs", useAssert)
-                local output = model:forward(inputs)
+                local output = model:forward(inputs):double()
                 if (not isValid(output)) then
                     -- invalid output
                     local midInput = inputs:clone()
@@ -150,7 +155,7 @@ for iChunk = 1,trainData.numChunks do
                 totalErr = totalErr + err
 
                 -- estimate df/dW
-                local df_do = criterion:backward(output, targets)
+                local df_do = criterion:backward(output, targets):cuda()
                 if (not isValid(df_do)) then
                     print 'after criterion:backward - non-valid model df_do'
                     -- df_do:zero()

@@ -1,9 +1,9 @@
 echo 'producing network features'
-models_dir=../results_deepid/CFW_PubFig_SUFR_deepID.3.64_15patches
-output_dir=$models_dir/features_1_12
+models_dir=../results_deepid/CASIA_deepID.3.64/23_12
+output_dir=$models_dir/features
 
 echo 'verification set'
-data_path=../data_files/deepId_full/CFW_PubFig_SUFR/CFW_PubFig_SUFR_verification.mat
+data_path=../data_files/deepId_full/CASIA/CASIA_verification.mat
 output_path=$output_dir/verification
 th get_deepid_features.lua $output_path --dataPath $data_path --deepIdMode 2 --save $models_dir --batchSize 64
 

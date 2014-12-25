@@ -16,6 +16,8 @@ function getOptions()
     -- deepid parameters :
     cmd:option('--patchIndex', 1, 'relevant for deepId only - index of the patch for training')
     cmd:option('--deepIdMode', 1, 'mode which indicates how the patches are generated (1=gets deepface images(152x152) and produce 5 patches, 2=gets deepid images(140x115) and produce 15 patches (3 scales)')
+    cmd:option('--deepIdPatchesType', 1, 'which kind of patches to use - 1 is based on DeepId paper, 2 on DeepId2 one')
+    cmd:option('--useFlippedPatches', true, 'should use flipped patches for training')
 
 	-- data:
 	cmd:option('--dataPath', '../data_files/CFW_flat/cfw_flat.t7', 'path to dataset file (mat or t7)')

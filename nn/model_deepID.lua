@@ -4,6 +4,7 @@
 -- Input: (batchsize)XdXkX31 (d = 1/3,k = 31/39)
 -- Output: 160d feature, classification into one of nLabels
 ----------------------------------------------------------------------
+package.path = package.path .. ";" .. paths.concat(paths.dirname(paths.thisfile()), 'deepId', '?.lua')
 require 'nn'
 require 'cunn'
 require 'ccn2'
@@ -11,17 +12,34 @@ require 'torch'
 require 'image'
 require 'options'
 require 'deep_id_utils'
+require 'deep_id2_utils'
 require 'math'
 
+----------------------------------------------------------------------
+-- parse command line arguments
+if not opt then
+    print '==> processing options'
+    opt = getOptions()
+end
+----------------------------------------------------------------------
+
 -- extract patch scale
-iPatch,iScale,iType = DeepIdUtils.parsePatchIndex(opt.patchIndex)
-imageDim = DeepIdUtils.patchSizeTarget[(iType - 1)*DeepIdUtils.numScales + iScale]
+nInputsPlane = 3
+if (opt.deepIdPatchesType == 1) then
+    iPatch,iScale,iType = DeepIdUtils.parsePatchIndex(opt.patchIndex)
+    imageDim = DeepIdUtils.patchSizeTarget[(iType - 1)*DeepIdUtils.numScales + iScale]
+elseif (opt.deepIdPatchesType == 2) then
+    imageDim = DeepId2Utils.patchSizeTarget[opt.patchIndex]
+    if (not DeepId2Utils.isRgb[opt.patchIndex]) then
+        -- this patch is grayscale
+        nInputsPlane = 1
+    end
+end
 if (type(imageDim) == 'table') then
     imageDim = imageDim[1]
 end
+local inputDim = nInputsPlane
 
--- only rgb patches are supported for now
-local inputDim = 3
 -- deafult value for feature dimension
 featureDim = 160
 

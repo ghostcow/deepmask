@@ -1,6 +1,7 @@
 package.path = package.path .. ";../?.lua"
 require 'options'
 require 'deep_id_utils'
+require 'deep_id2_utils'
 
 ----------------------------------------------------------------------
 -- use -visualize to show network
@@ -11,6 +12,7 @@ if not opt then
     print '==> processing options'
     opt = getOptions()
 end
+useFlippedPatches = opt.useFlippedPatches
 
 function cropPatches(data, labels, useFlippedPatches)
     dataInner = {}
@@ -20,7 +22,12 @@ function cropPatches(data, labels, useFlippedPatches)
     dataInner.data = data:transpose(1,4):transpose(2,3)
     dataInner.labels = labels[1]
     -- crop patches
-    dataInner.data = DeepIdUtils.getPatch(dataInner.data, opt.patchIndex, useFlippedPatches)
+    if (opt.deepIdPatchesType == 1) then
+        dataInner.data = DeepIdUtils.getPatch(dataInner.data, opt.patchIndex, useFlippedPatches)
+    elseif (opt.deepIdPatchesType == 2) then
+        dataInner.data = DeepId2Utils.getPatch(dataInner.data, opt.patchIndex, useFlippedPatches)
+    end
+
     if useFlippedPatches then
         -- replicate labels
         dataInner.labels = torch.cat(dataInner.labels, dataInner.labels)
@@ -80,6 +87,8 @@ else
 
             print('Loading from: ', chunkFilePath)
             local time = sys.clock()
+            chunkData = nil
+            collectgarbage()
             chunkData = loadFunc(chunkFilePath)
             print('Loading time= '..(sys.clock() - time)..' [s]')
             time = sys.clock()

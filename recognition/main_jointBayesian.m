@@ -3,7 +3,7 @@ addpath('../../liblinear-1.94/matlab');
 addpath('tools');
 
 type = 'deepid'; % type od the face images : deepface / deepid
-resultType = 7; % look at GetResultFilePaths for options
+resultType = 8; % look at GetResultFilePaths for options
 
 %% constants 
 % lfw configuration : restricted/unrestrcited
