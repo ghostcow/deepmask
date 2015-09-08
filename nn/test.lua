@@ -1,93 +1,73 @@
 ----------------------------------------------------------------------
--- Deepface nn test code torch7
--- testing on the test data from cfw dataset (later we will test on LFW)
--- Uses CUDA
+-- test procedure definiton, assumes dataset is defined
 ----------------------------------------------------------------------
 
-require 'torch'   -- torch
-require 'xlua'    -- xlua provides useful tools, like progress bars
-require 'optim'   -- an optimization package, for online and batch methods
+require 'os'
+require 'torch'
+require 'cutorch'
+require 'xlua'
+require 'optim'
+require 'logger'
+
+----------------------------------------------------------------------
+-- parse command line arguments
+if not opt then
+    print '==> processing options'
+    require '../nn_utils/dataset'
+    opt = getOptions()
+
+    local state_file_path = paths.concat(opt.save, 'model.net')
+    model = torch.load(state_file_path)
+    dataset = torch.dataset.load(nil, opt.dataPath)
+end
+
+----------------------------------------------------------------------
+print '==> defining some tools for test'
+-- This matrix records the current confusion across classes
+if confusion == nil then
+    confusion = optim.ConfusionMatrix(dataset.classes)
+end
 
 ----------------------------------------------------------------------
 print '==> defining test procedure'
-accuracyTest = 0
--- test function
+
 function test()
-    -- turn off dropout modules
-    model:evaluate()
-    confusion:zero()
+   -- set all modules to test
+   model:evaluate()
 
-    -- local vars
-    local time = sys.clock()
+   -- local vars
+   local timer = torch.Timer()
+   local t = 0
 
-    -- averaged param use?
-    if average then
-      cachedparams = parameters:clone()
-      parameters:copy(average)
-    end
+   -- test over test data
+   print('==> testing on test set:')
+   for inputs, labels in dataset:test(opt.batchSize) do
+       -- disp progress
+       xlua.progress(t, dataset:sizeTest())
+       t = t + inputs:size(1)
 
-    -- test over test data
-    print('==> testing on test set:')
-    local testDataChunk
-    local timeLoad
-    for iChunk = 1,testData.numChunks do
-        timeLoad = sys.clock()
-        testDataChunk = testData.getChunk(iChunk)
-        collectgarbage()
-        timeLoad = sys.clock() - timeLoad
-        print("\n==> data loading time = " .. timeLoad .. ' [s]')
-        for t = 1,testDataChunk:size(),opt.batchSize do
-            -- disp progress
-            xlua.progress(t, testDataChunk:size())
-            if ((t+opt.batchSize-1) > testDataChunk:size()) then
-                -- we don't use the last samples
-                break
-            end
+       inputs = inputs:cuda()
+       labels = labels:double():cuda()
 
-            -- get new sample
-            local inputs = testDataChunk.data[{{t,t+opt.batchSize-1}}]
-            local numInputs = inputs:size()[1]
-            inputs = inputs:cuda()
-            local targets = testDataChunk.labels[{{t,t+opt.batchSize-1}}]
+       -- test sample
+       local outputs = model:forward(inputs)
 
-            -- test sample
-            local outputs = model:forward(inputs)
-            for i=1,numInputs do
-                confusion:add(outputs[i], targets[i])
-            end
+       for i=1,inputs:size()[1] do
+           confusion:add(outputs[i], labels[i])
+       end
 
-            -- grabage collection after every batch (TODO : might be too expensive...)
-            collectgarbage()
-        end
+       -- grabage collection after every batch
+       collectgarbage()
    end
 
-    -- timing
-    time = sys.clock() - time
-    print("\n==> test time = " .. time .. ' [s]')
+   -- timing
+   local time = timer:time().real / dataset:sizeTest()
+   print("\n==> time to test 1 sample = " .. (time*1000) .. 'ms')
 
-    -- print confusion matrix values
-    confusion:updateValids()
-    accuracyTest = confusion.totalValid * 100
-    print("accuracy = ", accuracyTest)
+   -- print confusion matrix values
+   confusion:updateValids()
+   logTest(confusion, nil, model)
 
-    local filename_confusion = paths.concat(opt.save, 'confusion_test')
-    torch.save(filename_confusion, confusion)
-    testLogger:add{['% total accuracy'] = confusion.totalValid * 100,
-     ['% average accuracy'] = confusion.averageValid * 100}
-    if opt.plot then
-      testLogger:style{['% total accuracy'] = '-'}
-      testLogger:plot()
-    end
-
-    -- averaged param use?
-    if average then
-      -- restore parameters
-      parameters:copy(cachedparams)
-    end
-
-    -- next iteration:
-    confusion:zero()
-
-    -- turn on dropout modules
-    model:training()
+   -- next iteration:
+   confusion:zero()
 end

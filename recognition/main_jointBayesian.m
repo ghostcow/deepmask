@@ -1,32 +1,37 @@
-clear variables; close all; clc;
+clearvars variables -except resultDir;
+close all;
+clc;
+
 addpath('../../liblinear-1.94/matlab');
 addpath('tools');
 
-type = 'deepid'; % type od the face images : deepface / deepid
-resultType = 8; % look at GetResultFilePaths for options
+
+%% Define all paths here
+if ~exist('resultDir', 'var')
+    resultDir = '../results'
+else
+    resultDir
+end
 
 %% constants 
 % lfw configuration : restricted/unrestrcited
 RESTRICTED = false; 
+
 % should update the in-domain trained jb model, using the new domain data
 updateInDomainJbModel = true; % original value = true
 svmParams = struct('type', 1, 'C', 1); % original values : type=3, C=0.05
+
 % finalTestMethod : 
-% 1 = liblinear train & predict, 2 = liblinear train & our predict, 3 = choosing best threshold based on training
+%   1 = liblinear train & predict
+%   2 = liblinear train & our predict
+%   3 = choosing best threshold based on training
 finalTestMethod = 3; 
-% profile image - 20/25/30
-netIndices = [];  % we can also test accuracy when using only some of the nets
 
-if strcmp(type, 'deepface')
-    lfwPeopleImagesFilePath = '../data_files/LFW/people.mat'; % relevant only when RESTRICTED = false
-elseif strcmp(type, 'deepid')
-    lfwPeopleImagesFilePath = '../data_files/deepId_full/LFW/people.mat'; % relevant only when RESTRICTED = false
-end
+% relevant only when RESTRICTED = false
+lfwPeopleImagesFilePath = '../data_files/deepId_full/LFW/people.mat'; 
 
-[resDir, lfwpairsResFileName, lfwpeopleResFileName, verificationResFileName, verificationImagesFilePath] = ...
-    GetResultFilePaths(resultType);
-
-recognitionResDir = fullfile(resDir, 'recognition');
+% results dir and files
+recognitionResDir = strcat(resultDir, '/recognition');
 if ~exist(recognitionResDir, 'dir')
     mkdir(recognitionResDir)
 end
@@ -34,43 +39,28 @@ recognitionResPath = fullfile(recognitionResDir, 'LFW_verification_results.txt')
 
 %% loading Verification data (source domain)
 % sourceX - data, sourceY - labels
-if strcmp(verificationImagesFilePath(end-2:end), 'txt')
-    fid = fopen(verificationImagesFilePath);
-    C = textscan(fid, '%s %d', 'Delimiter', ',');
-    fclose(fid);
-    verificationFeaturesLabels = C{2};
-elseif strcmp(verificationImagesFilePath(end-2:end), 'mat')
-    S = load(verificationImagesFilePath, 'labels');
-    verificationFeaturesLabels = S.labels;
-end 
-
-% loading verification set features
-verificationResFiles = dir(fullfile(resDir, verificationResFileName));
-% final 2D array with pairs feature, each with dimensions [featureDim x nPairs]
-verificationFeatures = [];
-if isempty(netIndices)
-    netIndices = 1:length(verificationResFiles);
-end
-nFiles = length(netIndices);
-iFile = 1;
-for netIndex = netIndices
-    S = load(fullfile(resDir, verificationResFiles(netIndex).name));
-    if isempty(verificationFeatures)
-        subFeatureDim = size(S.x, 1);
-        featureDim = nFiles*subFeatureDim;
-        verificationFeatures = zeros(featureDim, length(verificationFeaturesLabels));
-    end
-    
-    subFeatureIndex = 1 + (iFile - 1)*subFeatureDim;
-    verificationFeatures(subFeatureIndex:(subFeatureIndex + subFeatureDim - 1), :) = S.x;
-    iFile = iFile + 1;
-end
-sourceX = verificationFeatures';
-sourceY = verificationFeaturesLabels';
+load(strcat(resultDir, '/features/test_features.mat'));
+sourceX = features';
+sourceY = labels';
 
 %% Loading LFW data (target domain)
-[targetX1, targetX2, targetY, targetSplitId] = LoadLfwPairs(...
-    fullfile(resDir, lfwpairsResFileName), netIndices);
+load(strcat(resultDir, '/features/lfw_pair_feature.mat'));
+numFolds=10;
+numPairsPerFold=300;
+nPairs = numFolds*numPairsPerFold*2;
+targetSplitId = foldId;
+
+selector = targetY==0;
+targetX1(:,selector) = 0;
+targetX2(:,selector) = 0;
+
+targetY = zeros(nPairs, 1);
+for iFold = 1:numFolds
+    startIndex = 1 + (iFold-1)*2*numPairsPerFold;
+    targetY(startIndex:(startIndex+numPairsPerFold-1)) = 1; % positive pairs
+    targetY((startIndex+numPairsPerFold):(startIndex+2*numPairsPerFold-1)) = -1; % negative pairs
+end
+
 % NOTE : this is illegal but just checking the results when not using the bad images
 % validPairsIndices = find((sum(targetX1.^2) > 0) & (sum(targetX2.^2) > 0));
 % targetX1 = targetX1(:, validPairsIndices);
@@ -80,8 +70,10 @@ sourceY = verificationFeaturesLabels';
 
 if ~RESTRICTED
     % load by people (based on people.txt)
-    [targetPeopleX, targetPeopleY, targetPeopleSplitId] = LoadLfwPeople(...
-        fullfile(resDir, lfwpeopleResFileName), lfwPeopleImagesFilePath, netIndices);
+    peopleFeatures = load(strcat(resultDir, '/features/lfw_people_feature.mat'));
+    targetPeopleX = peopleFeatures.targetX;
+    targetPeopleY = peopleFeatures.targetY;
+    targetPeopleSplitId = peopleFeatures.foldId;
     
     % images with lable=0 are invalid (face detections has been failed)
     validImagesIndices = find(targetPeopleY > 0);
@@ -239,3 +231,10 @@ accuracies
 [mean(accuracies(1,:)) std(accuracies(1,:))]
 dlmwrite(recognitionResPath, accuracies, '-append');
 dlmwrite(recognitionResPath, [mean(accuracies(1,:)) std(accuracies(1,:))], '-append');
+
+mean = sourcePcaModel.mean;
+full_proj = sourcePcaModel.full_proj;
+save(fullfile(recognitionResDir, 'pcamodel.mat') ,'mean','full_proj');
+A = sourceJbModel.A;
+G = sourceJbModel.G;
+save(fullfile(recognitionResDir, 'jbmodel.mat') ,'A','G');
