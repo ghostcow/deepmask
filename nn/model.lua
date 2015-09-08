@@ -24,9 +24,8 @@ if opt.retrain ~= 'none' then
     model = torch.load(opt.retrain)
 else
     local networkConfigPath = 'models/' .. opt.netType .. '.lua'
-    paths.dofile(networkConfigPath)
     print('=> Creating model from file: ' .. networkConfigPath)
-    model = createModel() -- for the model creation code, check the models folder
+    model = require(networkConfigPath)
 end
 
 -- 3. Create Criterion

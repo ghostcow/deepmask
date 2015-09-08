@@ -75,9 +75,7 @@ function trainBatch(inputs, targets)
         model:backward(inputs, df_do)
 
         -- update confusion
-        for i=1,targets:nElement() do
-            confusion:add(output[i], targets[i])
-        end
+        confusion:batchAdd(output, targets)
 
         -- update total err
         totalErr = totalErr + err
