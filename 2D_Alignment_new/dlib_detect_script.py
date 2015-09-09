@@ -3,7 +3,6 @@
 import dlib
 import glob
 from skimage import io
-import matplotlib.pyplot as plt
 
 io.use_plugin('matplotlib')
 import numpy as np
