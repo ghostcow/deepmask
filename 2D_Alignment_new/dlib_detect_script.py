@@ -4,6 +4,7 @@ import dlib
 import glob
 from skimage import io
 import matplotlib.pyplot as plt
+
 io.use_plugin('matplotlib')
 import numpy as np
 import os
@@ -14,7 +15,8 @@ detector = None
 predictor = None
 dst = np.dstack(([25.0347, 34.1802, 44.1943, 53.4623, 34.1208, 39.3564, 44.9156, 31.1454, 47.8747],
                  [34.1580, 34.1659, 34.0936, 33.8063, 45.4179, 47.0043, 45.3628, 53.0275, 52.7999])).squeeze()
-dst = dst*3.5
+dst *= 3.5
+
 
 def _shape_to_np(shape, indices=None):
     xy = []
@@ -56,56 +58,43 @@ def get_identity_images(identity_dir_path):
         identity_image_paths.append(f)
 
     return identity_image_paths
-'''
-function [basePts, x0, x1, y0, y1] = GetAlignedImageCoords(alignparams)
-%GetAlignedImageCoords get coordinates of the aligned image borders and basepoints
-
-    % landmarks in the canonical coordinate system
-    basePts = alignparams.basePts;
-
-    % horizontal centre
-    cx = mean(basePts(1, [1:4, 8:9]));
-
-    % eye line
-    top = mean(basePts(2, 1:4));
-
-    % mouth line
-    bottom = mean(basePts(2, 8:9));
-
-    % horizontal distance between eyes
-    dx = mean(basePts(1, 3:4)) - mean(basePts(1, 1:2));
-
-    % vertical distance between eyes & mouth
-    dy = bottom - top;
-
-    % set crop region in the canonical coordinate system
-    horRatio = alignparams.horRatio;
-    topRatio = alignparams.topRatio;
-    bottomRatio = alignparams.bottomRatio;
-
-    x0 = cx - dx * horRatio;
-    x1 = cx + dx * horRatio;
-    y0 = top - dy * topRatio;
-    y1 = bottom + dy * bottomRatio;
-
-    % scale
-    scale = alignparams.scale;
-
-    basePts = basePts * scale;
-    x0 = x0 * scale;
-    x1 = x1 * scale;
-    y0 = y0 * scale;
-    y1 = y1 * scale;
-end
-'''
 
 
 def align_img(img, landmarks):
     src = landmarks[[37, 40, 43, 46, 32, 34, 36, 49, 55]]
     affine_transform = skimage.transform.estimate_transform('similarity', src, dst)
 
-    return skimage.transform.warp(img, inverse_map=affine_transform.inverse, order=3,
+    return skimage.transform.warp(img, affine_transform.inverse, order=3,
                                   output_shape=(300, 300))
+
+
+def crop_image(img):
+    # horizontal centre
+    cx = dst[:, 0][[0, 1, 2, 3, 7, 8]].mean()
+
+    # eye line
+    top = dst[:, 1][[0, 1, 2, 3]].mean()
+
+    # mouth line
+    bottom = dst[:, 1][[7, 8]].mean()
+
+    # horizontal distance between eyes
+    dx = dst[:, 0][[2, 3]].mean() - dst[:, 0][[0, 1]].mean()
+
+
+    # vertical distance between eyes & mouth
+    dy = bottom - top
+
+    horRatio = 1.5
+    topRatio = 1.6
+    bottomRatio = 0.8
+
+    x0 = np.floor(cx - dx * horRatio)
+    x1 = np.floor(cx + dx * horRatio)
+    y0 = np.maximum(np.floor(top - dy * topRatio), 0)
+    y1 = np.floor(bottom + dy * bottomRatio)
+
+    return img[y0:y1, x0:x1, :]
 
 
 def align_identity_images(identity_dir_path, aligned_dir_path):
@@ -122,8 +111,9 @@ def align_identity_images(identity_dir_path, aligned_dir_path):
         landmarks, bboxes = get_landmarks(img)
         # align image
         aligned_img = align_img(img, landmarks)
+        aligned_img = crop_image(aligned_img[::-1])
         # save image
-        io.imsave(os.path.join(identity_dir, os.path.basename(f)), aligned_img[::-1])
+        io.imsave(os.path.join(identity_dir, os.path.basename(f)), aligned_img)
 
 
 def main():

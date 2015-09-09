@@ -40,19 +40,22 @@ import dlib
 import glob
 from skimage import io
 
-if len(sys.argv) != 3:
-    print(
-        "Give the path to the trained shape predictor model as the first "
-        "argument and then the directory containing the facial images.\n"
-        "For example, if you are in the python_examples folder then "
-        "execute this program by running:\n"
-        "    ./face_landmark_detection.py shape_predictor_68_face_landmarks.dat ../examples/faces\n"
-        "You can download a trained facial shape predictor from:\n"
-        "    http://sourceforge.net/projects/dclib/files/dlib/v18.10/shape_predictor_68_face_landmarks.dat.bz2")
-    exit()
+# if len(sys.argv) != 3:
+#     print(
+#         "Give the path to the trained shape predictor model as the first "
+#         "argument and then the directory containing the facial images.\n"
+#         "For example, if you are in the python_examples folder then "
+#         "execute this program by running:\n"
+#         "    ./face_landmark_detection.py shape_predictor_68_face_landmarks.dat ../examples/faces\n"
+#         "You can download a trained facial shape predictor from:\n"
+#         "    http://sourceforge.net/projects/dclib/files/dlib/v18.10/shape_predictor_68_face_landmarks.dat.bz2")
+#     exit()
+#
+# predictor_path = sys.argv[1]
+# faces_folder_path = sys.argv[2]
 
-predictor_path = sys.argv[1]
-faces_folder_path = sys.argv[2]
+predictor_path = "shape_predictor_68_face_landmarks.dat"
+faces_folder_path = "/home/adampolyak/datasets/test/original/0000102"
 
 detector = dlib.get_frontal_face_detector()
 predictor = dlib.shape_predictor(predictor_path)
@@ -71,6 +74,10 @@ for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
     # second argument indicates that we should upsample the image 1 time. This
     # will make everything bigger and allow us to detect more faces.
     dets = detector(img, 0)
+
+    if len(dets) == 0:
+        dets = [dlib.rectangle(50, 50, 200, 200)]
+
     print("Number of faces detected: {}".format(len(dets)))
     for k, d in enumerate(dets):
         if k >= 0:
@@ -82,7 +89,8 @@ for f in glob.glob(os.path.join(faces_folder_path, "*.jpg")):
         print("Part 0: {}, Part 1: {} ...".format(shape.part(0),
                                                   shape.part(1)))
         # Draw the face landmarks on the screen.
+        print(shape)
         win.add_overlay(shape)
         print(counter)
-    win.add_overlay(dets)
+    #win.add_overlay(dets)
     dlib.hit_enter_to_continue()
