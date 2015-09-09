@@ -1,5 +1,7 @@
 addpath('align');
-run(fullfile('detectors','oxford_VGG','init.m'));
+run(fullfile('detectors','dlib','init.m'));
+type = 'deepid'
+%run(fullfile('detectors','oxford_VGG','init.m'));
 %run(fullfile('detectors','ZhuRaman','init.m'));
 
 % base locations for facial keypoints
