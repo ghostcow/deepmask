@@ -3,17 +3,26 @@
 import dlib
 import glob
 from skimage import io
+import matplotlib.pyplot as plt
+io.use_plugin('matplotlib')
 import numpy as np
 import os
 import sys
+import skimage.transform
 
 detector = None
 predictor = None
+dst = np.dstack(([25.0347, 34.1802, 44.1943, 53.4623, 34.1208, 39.3564, 44.9156, 31.1454, 47.8747],
+                 [34.1580, 34.1659, 34.0936, 33.8063, 45.4179, 47.0043, 45.3628, 53.0275, 52.7999])).squeeze()
+dst = dst*3.5
 
-
-def _shape_to_np(shape):
+def _shape_to_np(shape, indices=None):
     xy = []
-    for i in range(68):
+
+    if indices is None:
+        indices = range(shape.num_parts)
+
+    for i in indices:
         xy.append((shape.part(i).x, shape.part(i).y,))
     xy = np.asarray(xy, dtype='float32')
     return xy
@@ -27,13 +36,13 @@ def get_landmarks(img):
         rect = dets[0]
 
     shape = predictor(img, rect)
-    lmarks = _shape_to_np(shape)
+    landmarks = _shape_to_np(shape)
     bboxes = rect
 
-    lmarks = np.vstack(lmarks)
+    landmarks = np.vstack(landmarks)
     bboxes = np.asarray(bboxes)
 
-    return lmarks, bboxes
+    return landmarks, bboxes
 
 
 def get_identity_dirs(dir_path):
@@ -47,10 +56,56 @@ def get_identity_images(identity_dir_path):
         identity_image_paths.append(f)
 
     return identity_image_paths
+'''
+function [basePts, x0, x1, y0, y1] = GetAlignedImageCoords(alignparams)
+%GetAlignedImageCoords get coordinates of the aligned image borders and basepoints
+
+    % landmarks in the canonical coordinate system
+    basePts = alignparams.basePts;
+
+    % horizontal centre
+    cx = mean(basePts(1, [1:4, 8:9]));
+
+    % eye line
+    top = mean(basePts(2, 1:4));
+
+    % mouth line
+    bottom = mean(basePts(2, 8:9));
+
+    % horizontal distance between eyes
+    dx = mean(basePts(1, 3:4)) - mean(basePts(1, 1:2));
+
+    % vertical distance between eyes & mouth
+    dy = bottom - top;
+
+    % set crop region in the canonical coordinate system
+    horRatio = alignparams.horRatio;
+    topRatio = alignparams.topRatio;
+    bottomRatio = alignparams.bottomRatio;
+
+    x0 = cx - dx * horRatio;
+    x1 = cx + dx * horRatio;
+    y0 = top - dy * topRatio;
+    y1 = bottom + dy * bottomRatio;
+
+    % scale
+    scale = alignparams.scale;
+
+    basePts = basePts * scale;
+    x0 = x0 * scale;
+    x1 = x1 * scale;
+    y0 = y0 * scale;
+    y1 = y1 * scale;
+end
+'''
 
 
 def align_img(img, landmarks):
-    return img
+    src = landmarks[[37, 40, 43, 46, 32, 34, 36, 49, 55]]
+    affine_transform = skimage.transform.estimate_transform('similarity', src, dst)
+
+    return skimage.transform.warp(img, inverse_map=affine_transform.inverse, order=3,
+                                  output_shape=(300, 300))
 
 
 def align_identity_images(identity_dir_path, aligned_dir_path):
@@ -64,11 +119,12 @@ def align_identity_images(identity_dir_path, aligned_dir_path):
     for i, f in enumerate(identity_images):
         print('%s: %d/%d' % (identity_name, i, len(identity_images)))
         img = io.imread(f)
-        lmarks, bboxes = get_landmarks(img)
+        landmarks, bboxes = get_landmarks(img)
         # align image
-        aligned_img = align_img(img, lmarks)
+        aligned_img = align_img(img, landmarks)
         # save image
-        io.imsave(os.path.join(identity_dir, os.path.basename(f)), aligned_img)
+        io.imsave(os.path.join(identity_dir, os.path.basename(f)), aligned_img[::-1])
+
 
 def main():
     if len(sys.argv) != 3:
@@ -88,7 +144,6 @@ def main():
     aligned_folder_path = os.path.join(sys.argv[2], "..", "aligned")
     if not os.path.isdir(aligned_folder_path):
         os.mkdir(aligned_folder_path)
-
 
     global detector, predictor
     detector = dlib.get_frontal_face_detector()
