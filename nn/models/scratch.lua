@@ -59,16 +59,4 @@ model:add(nn.Reshape(320,true))
 model:add(nn.Linear(320, #dataset.classes))
 model:add(nn.LogSoftMax())
 
-print('=> Initializing weights according to PReLU')
-for i=1,#model.modules do
-    local layer = model:get(i)
-    if layer.weight ~= nil and layer.kW ~= nil then
-        local stdv = math.sqrt(2/(1.25*layer.kW*layer.kH*layer.nInputPlane))
-        layer.weight:normal(0, stdv)
-    end
-    if layer.bias ~= nil then
-        layer.bias:fill(0)
-    end
-end
-
 return model
