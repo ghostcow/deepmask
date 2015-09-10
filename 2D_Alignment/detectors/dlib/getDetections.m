@@ -17,6 +17,12 @@ function [detections, landmarks] = getDetections(opts, imgPath, ~)
     if ~isempty(map)
         I = ind2rgb(I, map);
     end
+    if (length(X) < 3)
+        B(:,:,1) = I;
+        B(:,:,2) = I;
+        B(:,:,3) = I;
+        I = B;
+    end
     
     % detect in image
     try
