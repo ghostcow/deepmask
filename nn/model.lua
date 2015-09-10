@@ -39,6 +39,7 @@ local function MSRinit(net)
         end
     end
     init'nn.SpatialConvolution'
+    init'cunn.SpatialConvolution'
 end
 MSRinit(model)
 
