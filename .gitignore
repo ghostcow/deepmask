@@ -1,5 +1,6 @@
 *.mex
 *.mexw64
+*.mexa64
 *.mat
 *.t7
 *.jpg
@@ -7,6 +8,8 @@
 *.out
 .project
 .buildpath
+detections.txt
+detections_*.txt
 *.zip
 /.idea
 CMakeFiles/*
