@@ -329,8 +329,13 @@ function dataset:defaultSampleHook(imgpath)
     imgpath = imgpath:gsub("/a/home/cc/students/cs/adampolyak", "/home/adampolyak")
     out:load(imgpath, self.loadSize[3], self.loadSize[2])
     :size(self.sampleSize[3], self.sampleSize[2])
-    out = out:toTensor('float','I','DHW')
-    --out = out:toTensor('float','RGB','DHW') -- cifar
+
+    if self.sampleSize[1] == 1 then
+        out = out:toTensor('float','I','DHW')
+    else
+        out = out:toTensor('float','RGB','DHW') -- cifar
+    end
+
     return out
 end
 
