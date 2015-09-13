@@ -11,6 +11,7 @@ require 'options'
 require 'logger'
 require 'assert'
 require 'weight_decays'
+require 'blur'
 
 ----------------------------------------------------------------------
 -- parse command line arguments

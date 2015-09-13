@@ -1,4 +1,5 @@
 require 'nn'
+require 'image'
 
 local Blur,parent = torch.class('nn.Blur', 'nn.Module')
 
@@ -11,13 +12,17 @@ local function gaussian(n, sigma)
     return g/g:sum()
 end
 
-function Blur:__init(n, sigma)
+function Blur:__init(n, sigma, rgdMode)
     parent.__init(self)
-    self:updateGaussian(n, sigma)
+    self.rgdMode = not (rgdMode == nil)
+    self:updateGaussian(n, sigma, self.rgdMode)
 end
 
 function Blur:updateGaussian(n, sigma)
-    self.g = gaussian(n, sigma):repeatTensor(3,1,1)
+    self.g = gaussian(n, sigma)
+    if self.rgdMode then
+        self.g = self.g:repeatTensor(3,1,1)
+    end
 end
 
 function Blur:updateOutput(input)
