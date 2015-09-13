@@ -48,6 +48,7 @@ do -- start K datathreads (donkeys)
                 require 'torch'
                 require 'dataset'
                 require 'math'
+                require 'blur'
             end,
 
             function(idx)
@@ -75,33 +76,4 @@ do -- start K datathreads (donkeys)
         function donkeys:synchronize() end
         function donkeys:terminate() end
     end
-end
-
--------------------------------------------------------------------------------
--- visualizing data
-if opt.visualize then
-  require 'gfx.js'
-  print '==> visualizing data'
-  if (require 'gnuplot') then
-      gnuplot.figure(1)
-      local trainLabels = torch.DoubleTensor(#dataset.classes)
-      local testLabels = torch.DoubleTensor(#dataset.classes)
-      local labels = torch.linspace(0, #dataset.classes-1, #dataset.classes):long()
-      for k,_ in ipairs(dataset.classes) do
-          trainLabels[k] = dataset:sizeTrain(k)
-          testLabels[k] = dataset:sizeTest(k)
-      end
-
-	  gnuplot.plot(labels, trainLabels)
-	  gnuplot.title('#samples per label - training')
-	  gnuplot.figure(2)
-	  gnuplot.plot(labels, testLabels)
-	  gnuplot.title('#samples per label - test')
-  end
-
-
-  for first100Samples_train,_ in dataset:train(100) do
-      gfx.image(first100Samples_train, {legend='train - 100 samples'})
-      break
-  end
 end

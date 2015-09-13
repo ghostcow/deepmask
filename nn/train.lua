@@ -122,6 +122,11 @@ function train()
 
                 local maxIndex = math.min(dataset:sizeTrain(), i + opt.batchSize - 1)
                 local inputs, targets, _ = dataset:get(i, maxIndex, dataset.trainIndices)
+
+                if opt.blurSize ~= -1 then
+                    inputs = nn.Blur(opt.blurSize, opt.blurSigma):forward(inputs)
+                end
+
                 collectgarbage()
                 return inputs, targets
             end,
