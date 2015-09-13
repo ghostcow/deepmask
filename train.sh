@@ -1,13 +1,26 @@
 #!/usr/bin/env bash
 
 cd nn
-LAYER=13
+
+# Original command
+#th doall.lua --imageDirPath  /home/adampolyak/datasets/CASIA/aligned_scratch \
+#             --imageSize 1x100x100 \
+#             --split 10 \
+#             --netType scratch \
+#             --save ~/results/scratch_blur \
+#             --blurSize 5 \
+#             --blurSigma 10 \
+#             --momentum 0.9 \
+#             --learningRate 0.001 \
+#             --batchSize 128 \
+#             --epochs 10
 
 # Train
-th doall.lua --dataPath  ~/results/scratch/teacher_new_init/results/dataset.t7 \
-             --retrain ~/results/scratch/reduce_and_reuse/power_2_75_FT/layer_${LAYER}/coef2_reduced_model.t7 \
-             --save ~/results/scratch/reduce_and_reuse/power_2_75_FT/layer_${LAYER}/results_FT \
+th doall.lua --dataPath  /home/adampolyak/results/scratch_blur/dataset.t7    \
+             --netType scratch \
+             --save ~/results/scratch_blur \
+             --blurSize 5 \
+             --blurSigma 10 \
              --momentum 0.9 \
-             --learningRate 0.0001 \
-             --batchSize 64 \
-             --epochs 10
+             --learningRate 0.001 \
+             --batchSize 128

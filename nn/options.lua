@@ -43,6 +43,7 @@ function getOptions()
     
     local opt = cmd:parse(arg or {})
     opt.imageSize = parseImageSize(opt.imageSize)
+    print(opt.imageSize)
 
     paths.mkdir(opt.save)
     cmd:log(paths.concat(opt.save, 'doall.log'), opt)
