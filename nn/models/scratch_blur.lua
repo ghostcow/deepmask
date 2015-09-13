@@ -26,11 +26,23 @@ do -- data augmentation module
     end
 
     function Blur:updateGaussian(n, sigma)
-        self.g = gaussian(n, sigma)
+        self.g = gaussian(n, sigma):repeatTensor(3,1,1)
     end
 
     function Blur:updateOutput(input)
-        self.output = image.convolve(input,self.g,'same')
+        if input:dim() == 3 then
+            self.output = image.convolve(input,self.g,'same')
+        else
+            if (self.output == nil) or (self.output:dim() ~= 3) then
+                self.output = torch.Tensor():resizeAs(input):typeAs(input)
+            end
+
+            for i = 1,input:size(1) do
+                self.output[i] = image.convolve(input[i],self.g,'same')
+            end
+            self.output = self.output[{{1,input:size(1)}}]
+        end
+
         return self.output
     end
 end
