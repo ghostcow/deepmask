@@ -3,7 +3,7 @@ clearvars -except mainDir srcDir dstDir FLIP;
 close all;
 
 if ~exist('mainDir', 'var')
-    mainDir = '/media/data/datasets/CASIA';
+    mainDir = '/home/adampolyak/datasets/CASIA';
 end
 
 if ~exist('srcDir', 'var')
@@ -28,7 +28,7 @@ figDirs = figDirs([figDirs.isdir]); % clear all non dir files
 figDirs(strncmp({figDirs.name}, '.', 1)) = []; % clear . and .. from dir
 nPersons = length(figDirs);
 
-for iFigure = 1:nPersons
+parfor iFigure = 1:nPersons
     fprintf('%d - %s\n', iFigure, figDirs(iFigure).name);
     
     currDir = fullfile(srcDir, figDirs(iFigure).name);
@@ -41,7 +41,7 @@ for iFigure = 1:nPersons
     end
     
     % make parfor
-    parfor iImage = 1:nImages
+    for iImage = 1:nImages
         srcImagePath = fullfile(currDir, images(iImage).name);
         dstImagePath = fullfile(currDstDir, images(iImage).name);
         dstFlipedImagePath = fullfile(currDstDir, strcat('flipped_',images(iImage).name));
@@ -56,13 +56,13 @@ for iFigure = 1:nPersons
             im = temp;
         end
         % crop image
-        im = im(48:249, 20:221, :); % maybe take more height
+        im = im(28:269, 20:221, :);
         % resize image
-        im = imresize(im, 150/size(im,1));
+        im = imresize(im, 0.7);
         
         imwrite(im2double(im), dstImagePath);
         if FLIP
-            imwrite(im2double(fliplr(im)), dstFlipedImagePath);
+            imwrite(im2double(flipdim(im,2)), dstFlipedImagePath);
         end
     end
 end
