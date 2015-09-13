@@ -40,7 +40,7 @@ model:add(cudnn.SpatialMaxPooling(2, 2, 2, 2))
 model:add(cudnn.SpatialConvolution(256, 128, 3, 3, 1, 1, 1, 1)) -- 21
 model:add(nn.PReLU())
 model:add(cudnn.SpatialConvolution(128, 256, 3, 3, 1, 1, 1, 1)) -- 23
-model:add(cudnn.SpatialAveragePooling(2, 2, 2, 2, 1, 1))
+model:add(cudnn.SpatialAveragePooling(2, 2, 2, 2))
 
 -- Dropout & Fc6 & Fc7 & LogSoftMax
 model:add(nn.View(256*6*5))
