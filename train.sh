@@ -22,5 +22,5 @@ th doall.lua --dataPath  /home/adampolyak/results/scratch_blur/dataset.t7    \
              --blurSize 5 \
              --blurSigma 10 \
              --momentum 0.9 \
-             --learningRate 0.001 \
+             --learningRate 0.01 \
              --batchSize 128
