@@ -18,7 +18,7 @@ cd nn
 # Train
 th doall.lua --dataPath  /home/adampolyak/results/scratch_blur/dataset.t7    \
              --netType scratch \
-             --save ~/results/scratch_blur \
+             --save ~/results/scratch_blur/results_1 \
              --blurSize 5 \
              --blurSigma 10 \
              --momentum 0.9 \
