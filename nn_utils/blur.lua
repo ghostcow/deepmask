@@ -16,6 +16,7 @@ function Blur:__init(n, sigma, rgdMode)
     parent.__init(self)
     self.rgdMode = not (rgdMode == nil)
     self:updateGaussian(n, sigma, self.rgdMode)
+    self.train = true
 end
 
 function Blur:updateGaussian(n, sigma)
@@ -26,6 +27,11 @@ function Blur:updateGaussian(n, sigma)
 end
 
 function Blur:updateOutput(input)
+    if self.train == false then
+        self.output = input
+        return self.output
+    end
+
     if input:dim() == 3 then
         self.output = image.convolve(input,self.g,'same')
     else
