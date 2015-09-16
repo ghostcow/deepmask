@@ -4,6 +4,11 @@ require 'cudnn'
 require 'optim'
 require 'paths'
 
+print(cudnn.benchmark)
+print(cudnn.fastest)
+cudnn.benchmark = true
+cudnn.fastest = true
+
 --[[
 1. Create Model
 2. Create Criterion
@@ -33,7 +38,7 @@ print('=> Initializing weights according to MSR')
 local function MSRinit(net)
     local function init(name)
         for _,v in pairs(net:findModules(name)) do
-            local n = v.kW*v.kH*v.nInputPlan
+            local n = v.kW*v.kH*v.nInputPlane
             v.weight:normal(0,math.sqrt(2/n))
             v.bias:zero()
         end
