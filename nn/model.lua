@@ -34,7 +34,7 @@ local function MSRinit(net)
     local function init(name)
         for _,v in pairs(net:findModules(name)) do
             local n = v.kW*v.kH*v.nInputPlan
-            v.weight:normal(0,math.sqrt(2/(1.25*n))) -- 1.25 is the initial value
+            v.weight:normal(0,math.sqrt(2*n))
             v.bias:zero()
         end
     end
