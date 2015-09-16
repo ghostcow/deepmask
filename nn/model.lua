@@ -38,8 +38,8 @@ local function MSRinit(net)
             v.bias:zero()
         end
     end
+    init'cudnn.SpatialConvolution'
     init'nn.SpatialConvolution'
-    init'cunn.SpatialConvolution'
 end
 MSRinit(model)
 
