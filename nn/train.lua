@@ -124,8 +124,9 @@ function train()
                 local maxIndex = math.min(dataset:sizeTrain(), i + opt.batchSize - 1)
                 local inputs, targets, _ = dataset:get(i, maxIndex, dataset.trainIndices)
 
-                if opt.blurSize ~= -1 then
-                    inputs = nn.Blur(opt.blurSize, opt.blurSigma):forward(inputs)
+                local sigma = opt.blurSigma - opt.blurSigma/opt.epochs*(tepoch-1)
+                if opt.blurSize ~= -1 and sigma > 0 then
+                    inputs = nn.Blur(opt.blurSize, sigma):forward(inputs)
                 end
 
                 collectgarbage()
