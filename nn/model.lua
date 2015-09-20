@@ -31,22 +31,22 @@ else
     local networkConfigPath = 'models/' .. opt.netType .. '.lua'
     print('=> Creating model from file: ' .. networkConfigPath)
     model = require(networkConfigPath)
-end
 
--- 2. Initilize model according to MSR
-print('=> Initializing weights according to MSR')
-local function MSRinit(net)
-    local function init(name)
-        for _,v in pairs(net:findModules(name)) do
-            local n = v.kW*v.kH*v.nInputPlane
-            v.weight:normal(0,math.sqrt(2/n))
-            v.bias:zero()
+    --Initilize model according to MSR
+    print('=> Initializing weights according to MSR')
+    local function MSRinit(net)
+        local function init(name)
+            for _,v in pairs(net:findModules(name)) do
+                local n = v.kW*v.kH*v.nInputPlane
+                v.weight:normal(0,math.sqrt(2/n))
+                v.bias:zero()
+            end
         end
+        init'cudnn.SpatialConvolution'
+        init'nn.SpatialConvolution'
     end
-    init'cudnn.SpatialConvolution'
-    init'nn.SpatialConvolution'
+    MSRinit(model)
 end
-MSRinit(model)
 
 -- 3. Create Criterion
 criterion = nn.ClassNLLCriterion()
