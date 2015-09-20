@@ -86,6 +86,9 @@ function trainBatch(inputs, targets)
     end
 
     optim.sgd(feval, parameters, optimState)
+    if model.syncParameters ~= nil then
+        model:syncParameters()
+    end
 
     -- grabage collection after every batch
     collectgarbage()
