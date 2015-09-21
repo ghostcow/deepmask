@@ -10,18 +10,6 @@ require 'optim'
 require 'logger'
 
 ----------------------------------------------------------------------
--- parse command line arguments
-if not opt then
-    print '==> processing options'
-    require '../nn_utils/dataset'
-    opt = getOptions()
-
-    local state_file_path = paths.concat(opt.save, 'model.net')
-    model = torch.load(state_file_path)
-    dataset = torch.dataset.load(nil, opt.dataPath)
-end
-
-----------------------------------------------------------------------
 print '==> defining some tools for test'
 -- This matrix records the current confusion across classes
 if confusion == nil then
@@ -33,7 +21,7 @@ print '==> defining test procedure'
 
 function test()
    -- set all modules to test
-   model:evaluate()
+   net:evaluate()
 
    -- local vars
    local timer = torch.Timer()
@@ -50,7 +38,7 @@ function test()
        labels = labels:double():cuda()
 
        -- test sample
-       local outputs = model:forward(inputs)
+       local outputs = net:forward(inputs)
 
        for i=1,inputs:size()[1] do
            confusion:add(outputs[i], labels[i])
