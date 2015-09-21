@@ -52,6 +52,7 @@ if opt.parallel then
 
     cutorch.setDevice(opt.gpu)
 else
+    model:cuda()
     net = model
 end
 
