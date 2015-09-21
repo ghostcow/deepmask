@@ -65,6 +65,7 @@ function trainBatch(inputs, targets)
         end
 
         -- reset gradients
+        net:zeroGradParameters()
         gradParameters:zero()
 
         -- evaluate function for complete mini batch - estimate f
