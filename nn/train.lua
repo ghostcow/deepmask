@@ -66,7 +66,6 @@ function trainBatch(inputs, targets)
 
         -- reset gradients
         net:zeroGradParameters()
-        gradParameters:zero()
 
         -- evaluate function for complete mini batch - estimate f
         local output = net:forward(inputs)
