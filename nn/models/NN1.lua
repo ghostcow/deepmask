@@ -43,9 +43,9 @@ model:add(cudnn.SpatialConvolution(128, 256, 3, 3, 1, 1, 1, 1)) -- 23
 model:add(cudnn.SpatialAveragePooling(2, 2, 2, 2))
 
 -- Dropout & Fc6 & Fc7 & LogSoftMax
-model:add(nn.View(256*6*5))
+model:add(nn.View(256*4*5))
 model:add(nn.Dropout(0.4))
-model:add(nn.Linear(256*6*5, 512))
+model:add(nn.Linear(256*4*5, 512))
 model:add(nn.Linear(512, #dataset.classes))
 model:add(nn.LogSoftMax())
 

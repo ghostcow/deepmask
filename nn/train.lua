@@ -28,7 +28,7 @@ confusion = optim.ConfusionMatrix(dataset.classes)
 -- Retrieve parameters and gradients:
 -- this extracts and flattens all the trainable parameters of the mode
 -- into a 1-dim vector
-parameters,gradParameters = model:getParameters()
+parameters,gradParameters = net:getParameters()
 
 ----------------------------------------------------------------------
 print '==> configuring optimizer - SGD'
@@ -68,12 +68,12 @@ function trainBatch(inputs, targets)
         gradParameters:zero()
 
         -- evaluate function for complete mini batch - estimate f
-        local output = model:forward(inputs)
+        local output = net:forward(inputs)
         local err = criterion:forward(output, targets)
 
         -- estimate df/dW
         local df_do = criterion:backward(output, targets)
-        model:backward(inputs, df_do)
+        net:backward(inputs, df_do)
 
         -- update confusion
         confusion:batchAdd(output, targets)
@@ -86,8 +86,8 @@ function trainBatch(inputs, targets)
     end
 
     optim.sgd(feval, parameters, optimState)
-    if model.syncParameters ~= nil then
-        model:syncParameters()
+    if net.syncParameters ~= nil then
+        net:syncParameters()
     end
 
     -- grabage collection after every batch
@@ -95,7 +95,7 @@ function trainBatch(inputs, targets)
 end
 
 function train()
-    model:training()
+    net:training()
 
     -- epoch tracker
     epoch = epoch or 1

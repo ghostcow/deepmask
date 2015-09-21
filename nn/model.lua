@@ -9,19 +9,6 @@ print(cudnn.fastest)
 cudnn.benchmark = true
 cudnn.fastest = true
 
---[[
-1. Create Model
-2. Create Criterion
-3. If preloading option is set, preload weights from existing models appropriately
-4. Convert model to CUDA
-]]--
-
--- parse command line arguments
-if not opt then
-    print '==> processing options'
-    opt = getOptions()
-end
-
 -- 1. Create Network
 if opt.retrain ~= 'none' then
     assert(paths.filep(opt.retrain), 'File not found: ' .. opt.retrain)
@@ -32,7 +19,7 @@ else
     print('=> Creating model from file: ' .. networkConfigPath)
     model = require(networkConfigPath)
 
-    --Initilize model according to MSR
+    -- Initilize model according to MSR
     print('=> Initializing weights according to MSR')
     local function MSRinit(net)
         local function init(name)
@@ -48,14 +35,26 @@ else
     MSRinit(model)
 end
 
--- 3. Create Criterion
+-- 2. Create Criterion
 criterion = nn.ClassNLLCriterion()
 print('=> Model')
 print(model)
 print('=> Criterion')
 print(criterion)
 
--- 4. Convert model to CUDA
-print('=> Converting model to CUDA')
-model:cuda()
+-- 3. Check for parallel training mode
+if opt.parallel then
+    net = nn.DataParallelTable(1)
+    for i = opt.gpu, (opt.gpu+1) do
+        cutorch.setDevice(i)
+        net:add(model:clone():cuda(), i)
+    end
+
+    cutorch.setDevice(opt.gpu)
+else
+    net = model
+end
+
+-- 4. Convert Criterion to CUDA
+print('=> Converting Criterion to CUDA')
 criterion:cuda()

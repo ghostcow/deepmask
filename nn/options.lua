@@ -28,6 +28,7 @@ function getOptions()
 	cmd:option('--save', '../results', 'subdirectory to save/log experiments in')
 	cmd:option('--plot', false, 'live plot')
     cmd:option('--epochs', 1000, 'number of epochs to train')
+    cmd:option('--parallel', false, 'train in parallel mode')
 
 	-- optimization parameters (same as Krizhevsky ImageNet)
     cmd:option('--learningRate', 0.01, 'learning rate at t=0')
