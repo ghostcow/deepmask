@@ -101,6 +101,10 @@ function trimModel(trainedModel)
         collectgarbage()
     end
 
+    if trainedModel.syncParameters ~= nil then
+        return trainedModel.modules[0]:clone():float()
+    end
+
     return trainedModel:clone():float()
 end
 
