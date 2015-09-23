@@ -54,7 +54,7 @@ function test()
 
    -- print confusion matrix values
    confusion:updateValids()
-   logTest(confusion, nil, model)
+   logTest(confusion, nil, net)
 
    -- next iteration:
    confusion:zero()

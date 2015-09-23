@@ -152,7 +152,7 @@ function train()
     -- print confusion matrix  & error funstion values
     logConfusion(confusion, totalErr)
     -- save current network
-    logNetwork(model, optimState)
+    logNetwork(net, optimState)
 
     -- check all model parameters validity
     MyAssert(isValid(parameters), "non-valid model parameters")
