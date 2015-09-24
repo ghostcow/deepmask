@@ -66,7 +66,7 @@ function trimModel(trainedModel)
     end
 
     if trainedModel.syncParameters ~= nil then
-        return trainedModel.modules[0]:clone():float()
+        return trainedModel.modules[1]:clone():float()
     end
 
     return trainedModel:clone():float()
