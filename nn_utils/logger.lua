@@ -48,6 +48,10 @@ function logConfusion(confusion, totalErr, saveConfusion)
 end
 
 function trimModel(trainedModel)
+    if trainedModel.syncParameters ~= nil then
+        trainedModel = trainedModel.modules[1]
+    end
+
     for i=1,#trainedModel.modules do
         local layer = trainedModel:get(i)
         if layer.output ~= nil then
@@ -65,9 +69,6 @@ function trimModel(trainedModel)
         collectgarbage()
     end
 
-    if trainedModel.syncParameters ~= nil then
-        return trainedModel.modules[1]:clone():float()
-    end
 
     return trainedModel:clone():float()
 end
