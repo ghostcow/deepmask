@@ -31,7 +31,7 @@ end
 ----------------------------------------------------------------------
 -- check if we are in debug
 if opt.debug then
-    dataset.sizeTrain = function() return 2048 end
+    dataset.trainIndices = dataset.trainIndices[{{1,2048}}]
     dataset.testIndices = dataset.testIndices[{{1,2048}}]
 end
 
