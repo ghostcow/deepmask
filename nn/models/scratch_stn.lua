@@ -21,8 +21,8 @@ function build_st(sampleSize)
     locnet:add(cudnn.SpatialMaxPooling(2,2,2,2))
     locnet:add(cudnn.SpatialConvolution(20,20,5,5))
     locnet:add(cudnn.ReLU(true))
-    locnet:add(nn.View(20*2*2))
-    locnet:add(nn.Linear(20*2*2,20))
+    locnet:add(nn.View(20*19*19))
+    locnet:add(nn.Linear(20*19*19,20))
     locnet:add(cudnn.ReLU(true))
 
     -- we initialize the output layer so it gives the identity transform

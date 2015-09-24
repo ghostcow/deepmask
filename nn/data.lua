@@ -28,6 +28,13 @@ else
     end
 end
 
+----------------------------------------------------------------------
+-- check if we are in debug
+if opt.debug then
+    dataset.sizeTrain = function() return 2048 end
+    dataset.testIndices = dataset.testIndices[{{1,2048}}]
+end
+
 -------------------------------------------------------------------------------
 -- This script contains the logic to create K threads for parallel data-loading.
 -- For the data-loading details, look at donkey.lua
