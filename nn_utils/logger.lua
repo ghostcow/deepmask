@@ -47,42 +47,6 @@ function logConfusion(confusion, totalErr, saveConfusion)
     end
 end
 
-function logNetwork(trainedModel, optimState, modelName)
-    if modelName == nil then
-        modelName = 'model'
-    end
-
-    local state_file_path = paths.concat(logDir, modelName .. '.net')
-    local state_file_last_path = paths.concat(logDir,  modelName .. '_last.net')
-    local optim_state_file_path = paths.concat(logDir, modelName .. '.optim_state')
-
-    -- save/log current net
-    print('==> saving model & state to '..state_file_path)
-    os.rename(state_file_path, state_file_last_path)
-
-    -- Trim activations so the checkpoint is not too huge
-    for i=1,#trainedModel.modules do
-        local layer = trainedModel:get(i)
-        if layer.output ~= nil then
-            layer.output = layer.output.new()
-        end
-        if layer.gradInput ~= nil then
-            layer.gradInput = layer.gradInput.new()
-        end
-        -- for cudnn layer we need to reset the oDesc and iDesc
-        if layer.oDesc ~= nil or layer.iDesc ~= nil then
-            layer.oDesc = nil
-            layer.iDesc = nil
-        end
-
-        collectgarbage()
-    end
-
-    local fmodel = trainedModel:clone():float()
-    torch.save(state_file_path, fmodel)
-    torch.save(optim_state_file_path, optimState)
-end
-
 function trimModel(trainedModel)
     for i=1,#trainedModel.modules do
         local layer = trainedModel:get(i)
@@ -106,6 +70,24 @@ function trimModel(trainedModel)
     end
 
     return trainedModel:clone():float()
+end
+
+function logNetwork(trainedModel, optimState, modelName)
+    if modelName == nil then
+        modelName = 'model'
+    end
+
+    local state_file_path = paths.concat(logDir, modelName .. '.net')
+    local state_file_last_path = paths.concat(logDir,  modelName .. '_last.net')
+    local optim_state_file_path = paths.concat(logDir, modelName .. '.optim_state')
+
+    -- save/log current net
+    print('==> saving model & state to '..state_file_path)
+    os.rename(state_file_path, state_file_last_path)
+
+    local fmodel = trimModel(trainedModel)
+    torch.save(state_file_path, fmodel)
+    torch.save(optim_state_file_path, optimState)
 end
 
 function logTest(confusion, modelName, model)
