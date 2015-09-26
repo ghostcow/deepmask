@@ -10,6 +10,7 @@ require 'xlua'
 require 'nn'
 require 'cunn'
 require 'cudnn'
+require 'stn'
 ffi = require 'ffi'
 
 torch.setnumthreads(12)

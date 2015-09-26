@@ -10,6 +10,7 @@ require 'xlua'
 require 'nn'
 require 'cunn'
 require 'cudnn'
+require 'stn'
 
 torch.setnumthreads(12)
 torch.manualSeed(11)
