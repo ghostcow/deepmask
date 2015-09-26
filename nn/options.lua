@@ -15,6 +15,7 @@ function getOptions()
     cmd:option('--loadState', 'none', 'load optim state')
     cmd:option('--netType', 'scratch', 'name of the model (network) to use')
     cmd:option('--gpu', -1, 'Which GPU to use')
+    cmd:option('--debug', false, 'work on small dataset')
 
 	-- data:
 	cmd:option('--dataPath', '', 'path to dataset file - t7 file')
