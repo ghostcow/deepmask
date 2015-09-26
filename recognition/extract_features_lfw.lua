@@ -26,7 +26,7 @@ function getOptions()
 
     cmd:option('--lfwPath', 'lfw_dataset.t7', 'path to lfw directory or dataset')
     cmd:option('--lfwProtocolPath', 'lfw_protocols', 'lfw pairs.txt file path')
-    cmd:option('--modelPath', '../results/nn/model.net', 'path to nn model')
+    cmd:option('--modelPath', '../results/nn/model_best.net', 'path to nn model')
     cmd:option('--outputPath', '../results/features', 'path to lfw directory or dataset')
     cmd:option('--cpu', false, 'should use cpu')
     cmd:option('--batchSize', 128, 'batch size')

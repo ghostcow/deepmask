@@ -24,7 +24,7 @@ function getOptions()
     cmd:text('Options:')
 
     cmd:option('--dataPath', '../results/dataset.t7', 'path to dataset file path (created using dataset.lua)')
-    cmd:option('--modelPath', '../results/nn/model.net', 'path to nn model')
+    cmd:option('--modelPath', '../results/nn/model_best.net', 'path to nn model')
     cmd:option('--outputPath', '../results/features', 'path to lfw directory or dataset')
     cmd:option('--cpu', false, 'should use cuda')
 
