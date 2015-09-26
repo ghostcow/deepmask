@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RESULT_DIR=~/results/fitnet_1/KD/results_4
+RESULT_DIR=$1
 DATASET=~/results/teacher_new_init/results/dataset.t7
 
 cd recognition
