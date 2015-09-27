@@ -57,7 +57,7 @@ print '==> building model'
 local model = nn.Sequential()
 
 -- Add spatial image transform
-model:add(build_st({3,140,172}))
+model:add(build_st({3,142,170}))
 
 -- Conv11 & Conv12 & Pool1
 model:add(cudnn.SpatialConvolution(3, 64, 3, 3, 1, 1, 1, 1)) --1
