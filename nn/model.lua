@@ -3,6 +3,7 @@ require 'cunn'
 require 'cudnn'
 require 'optim'
 require 'paths'
+require 'stn'
 
 print(cudnn.benchmark)
 print(cudnn.fastest)
