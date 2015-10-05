@@ -1,5 +1,4 @@
 ----------------------------------------------------------------------
-			     i-outputPath $RESULT_DIR/features \
 -- Run the network over the given dataset
 ----------------------------------------------------------------------
 
@@ -56,7 +55,7 @@ function getDatapath(lfwPath)
     return lfw_dataset
 end
 
-function loadModel(modelPath)
+function loadModel(modelPath, opt)
     print '==> loading model'
     local model = torch.load(modelPath)
     if not opts.cpu then
@@ -69,10 +68,17 @@ function loadModel(modelPath)
     while (torch.type(model.modules[n]) ~= 'nn.Linear') and (n <=  #model.modules) do
         n = n + 1
     end
+
+    if opt.nn then
+        n = n + 1
+    end
+
     -- for full_conv model start from i=31
     for i = n,#model.modules do
         model.modules[i] = nil
     end
+
+    print(model)
 
     return model
 end
