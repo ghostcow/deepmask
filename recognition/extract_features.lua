@@ -65,7 +65,6 @@ end
 
 function getEmbeddingSize(model, dataset)
     local sample, _, _ = dataset:get(1,2)
-    print(sample:size())
     local output = model:forward(sample:cuda())
 
     return output:nElement()/2
