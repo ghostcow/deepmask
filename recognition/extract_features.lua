@@ -27,6 +27,7 @@ function getOptions()
     cmd:option('--dataPath', '../results/dataset.t7', 'path to dataset file path (created using dataset.lua)')
     cmd:option('--modelPath', '../results/nn/model_best.net', 'path to nn model')
     cmd:option('--outputPath', '../results/features', 'path to lfw directory or dataset')
+    cmd:option('--nn', false, 'path to lfw directory or dataset')
     cmd:option('--cpu', false, 'should use cuda')
 
     local opt = cmd:parse(arg or {})
@@ -46,6 +47,11 @@ function loadModel(modelPath, opt)
     while (torch.type(model.modules[n]) ~= 'nn.Linear') and (n <=  #model.modules) do
         n = n + 1
     end
+
+    if opt.nn then
+        n = n + 1
+    end
+
     -- for full_conv model start from i=31
     for i = n,#model.modules do
         model.modules[i] = nil
@@ -56,19 +62,15 @@ function loadModel(modelPath, opt)
     return model
 end
 
-function getEmbeddingSize(model)
-    local layer, _ = model:findModules('nn.Reshape')
+function getEmbeddingSize(model, dataset)
+    local sample, _, _ = dataset:get(1)
+    local output = model:forward(sample:cuda())
 
-    if #layer == 0 then
-        layer, _ = model:findModules('nn.View')
-        return layer[1].numElements
-    end
-
-    return layer[1].nelement
+    return output:nElement()
 end
 
 function extract_features(dataset, model, featuresFilename)
-    local features = torch.Tensor(dataset:sizeTest(), getEmbeddingSize(model))
+    local features = torch.Tensor(dataset:sizeTest(), getEmbeddingSize(model, dataset))
     local features_labels = torch.Tensor(dataset:sizeTest())
 
     local t = 1
