@@ -1,4 +1,5 @@
 ----------------------------------------------------------------------
+			     i-outputPath $RESULT_DIR/features \
 -- Run the network over the given dataset
 ----------------------------------------------------------------------
 
@@ -30,7 +31,8 @@ function getOptions()
     cmd:option('--modelPath', '../results/nn/model_best.net', 'path to nn model')
     cmd:option('--outputPath', '../results/features', 'path to lfw directory or dataset')
     cmd:option('--cpu', false, 'should use cpu')
-    cmd:option('--batchSize', 128, 'batch size')
+    cmd:option('--nn', false, 'path to lfw directory or dataset')
+    cmd:option('--batch', 128, 'batch size')
 
     local opt = cmd:parse(arg or {})
     return opt
@@ -42,8 +44,13 @@ function getDatapath(lfwPath)
     if paths.filep(lfwPath) then
         lfw_dataset = torch.dataset.load(nil, lfwPath)
     else
-        lfw_dataset = torch.dataset{paths={lfwPath}, sampleSize={1,100,100}, split=0 }
-        lfw_dataset:save('lfw_dataset.t7')
+        if opts.nn then
+                lfw_dataset = torch.dataset{paths={lfwPath}, sampleSize={3,142,170}, split=0 }
+                lfw_dataset:save('lfw_dataset_nn.t7')
+	else
+        	lfw_dataset = torch.dataset{paths={lfwPath}, sampleSize={1,100,100}, split=0 }
+        	lfw_dataset:save('lfw_dataset.t7')
+	end
     end
 
     return lfw_dataset
@@ -70,25 +77,20 @@ function loadModel(modelPath)
     return model
 end
 
-function getEmbeddingSize(model)
-    local layer, _ = model:findModules('nn.Reshape')
+function getEmbeddingSize(model, data)
+    local output = model:forward(data:cuda())
 
-    if #layer == 0 then
-        layer, _ = model:findModules('nn.View')
-        return layer[1].numElements
-    end
-
-    return layer[1].nelement
+    return output:nElement()/2
 end
 
 function extract_features(model, imagesData)
-    local features = torch.FloatTensor(imagesData:size(1), getEmbeddingSize(model))
+    local features = torch.FloatTensor(imagesData:size(1), getEmbeddingSize(model,imagesData[{{1,2}}]))
 
     local batchSize
     if opts.cpu then
         batchSize = 1
     else
-        batchSize = 128
+        batchSize = opts.batch
     end
 
     for i = 1,imagesData:size(1), batchSize do
@@ -151,8 +153,8 @@ function parse_lfw_pairs(dataset, lfwPairsPath, outputPath, model)
     end
 
     -- get extracted features for each pair according to pair.txt protocol
-    local images1 = torch.DoubleTensor(folds*foldSize*2, 1, 100, 100);
-    local images2 = torch.DoubleTensor(folds*foldSize*2, 1, 100, 100);
+    local images1 = torch.DoubleTensor(folds*foldSize*2, dataset.sampleSize[1], dataset.sampleSize[2], dataset.sampleSize[3]);
+    local images2 = torch.DoubleTensor(folds*foldSize*2, dataset.sampleSize[1], dataset.sampleSize[2], dataset.sampleSize[3]);
     local check1, check2;
     for i=1,folds do
         local foldStartIndex = (i-1)*foldSize*2
@@ -213,7 +215,7 @@ function extract_lfw_people_features(dataset, peopleProtocol, outputPath, model)
 
     -- create pairs label according to pair.txt protocol
     local targetY = torch.DoubleTensor(acc);
-    local targetX = torch.DoubleTensor(acc, 1, 100, 100);
+    local targetX = torch.DoubleTensor(acc, dataset.sampleSize[1], dataset.sampleSize[2], dataset.sampleSize[3]);
     local targetFoldId = torch.DoubleTensor(acc);
 
     local imageCounter = 1
