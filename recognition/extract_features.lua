@@ -27,6 +27,7 @@ function getOptions()
     cmd:option('--dataPath', '../results/dataset.t7', 'path to dataset file path (created using dataset.lua)')
     cmd:option('--modelPath', '../results/nn/model_best.net', 'path to nn model')
     cmd:option('--outputPath', '../results/features', 'path to lfw directory or dataset')
+    cmd:option('--batch', 128, 'batch size')
     cmd:option('--nn', false, 'path to lfw directory or dataset')
     cmd:option('--cpu', false, 'should use cuda')
 
@@ -63,10 +64,11 @@ function loadModel(modelPath, opt)
 end
 
 function getEmbeddingSize(model, dataset)
-    local sample, _, _ = dataset:get(1)
+    local sample, _, _ = dataset:get(1,2)
+    print(sample:size())
     local output = model:forward(sample:cuda())
 
-    return output:nElement()
+    return output:nElement()/2
 end
 
 function extract_features(dataset, model, featuresFilename)
@@ -78,7 +80,7 @@ function extract_features(dataset, model, featuresFilename)
     if opts.cpu then
         batchSize = 1
     else
-        batchSize = 128
+        batchSize = opts.batch
     end
 
     for inputs, labels in dataset:test(batchSize) do
