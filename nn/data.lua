@@ -1,7 +1,6 @@
 require 'options'
 require 'paths'
-require 'dataset'
-require 'memory_dataset'
+require 'CocoDataLoader'
 local Threads = require 'threads'
 
 ----------------------------------------------------------------------
@@ -11,29 +10,6 @@ local Threads = require 'threads'
 if not opt then
     print '==> processing options'
     opt = getOptions()
-end
-
-----------------------------------------------------------------------
--- used opt options opts.dataPath opts.trainOnly
-
-if opt.dataPath == '' then
-    -- create new dataset file
-    dataset = torch.dataset{paths={opt.imageDirPath}, sampleSize=opt.imageSize, split=(100 - opt.split)}
-    dataset:save(paths.concat(opt.save,'dataset.t7'))
-else
-    dataset = torch.load(opt.dataPath)
-    if  torch.type(dataset) == 'torch.dataset' then
-        dataset.sampleHookTrain = dataset.defaultSampleHook
-        dataset.sampleHookTest = dataset.defaultSampleHook
-    end
-end
-
-----------------------------------------------------------------------
--- check if we are in debug
-if opt.debug then
-    dataset.trainIndicesSize = 2048
-    dataset.trainIndices = dataset.trainIndices[{{1,2048}}]
-    dataset.testIndices = dataset.testIndices[{{1,2048}}]
 end
 
 -------------------------------------------------------------------------------
@@ -51,33 +27,26 @@ do -- start K datathreads (donkeys)
 
         donkeys = Threads(opt.nDonkeys,
             function()
-                package.path = package.path .. ";" .. '../nn_utils/?.lua'
+                package.path = package.path .. ";" .. 'toolbox/?.lua'
                 gsdl = require 'sdl2'
                 require 'torch'
-                require 'dataset'
+                require 'CocoDataLoader'
                 require 'math'
-                require 'blur'
             end,
 
             function(idx)
                 -- pass to all donkeys via upvalue
                 opt = options
-                dataset = localDataset
+                dataset = torch.dataLoader{dataPath=opt.dataPath,
+                                            cocoImagePath=opt.cocoImagePath,
+                                            negativeRatio=opt.negativeRatio}
                 tid = idx
-                tepoch = 0
-
-                dataset.sampleHookTrain = dataset.defaultSampleHook
-                dataset.sampleHookTest = dataset.defaultSampleHook
 
                 -- init thread seed
                 local seed = opt.seed + idx
                 torch.manualSeed(seed)
                 print(string.format('Starting donkey with id: %d seed: %d', tid, seed))
             end)
-
-        -- restore sample hooks
-        localDataset.sampleHookTrain = localDataset.defaultSampleHook
-        localDataset.sampleHookTest = localDataset.defaultSampleHook
     else -- single threaded data loading. useful for debugging
         donkeys = {}
         function donkeys:addjob(f1, f2) f2(f1()) end
