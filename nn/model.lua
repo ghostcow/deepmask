@@ -12,9 +12,7 @@ cudnn.fastest = true
 
 -- 1. Create Network
 if opt.retrain ~= 'none' then
-    assert(paths.filep(opt.retrain), 'File not found: ' .. opt.retrain)
-    print('Loading model from file: ' .. opt.retrain);
-    model = torch.load(opt.retrain)
+    assert(false, 'Not retrain is not implemetned')
 else
     local networkConfigPath = 'models/' .. opt.netType .. '.lua'
     print('=> Creating model from file: ' .. networkConfigPath)
@@ -37,6 +35,7 @@ else
 end
 
 -- 2. Create Criterion
+--TODO: define criterions
 criterion = nn.ClassNLLCriterion()
 print('=> Model')
 print(model)

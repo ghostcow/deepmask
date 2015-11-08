@@ -1,6 +1,6 @@
 require 'options'
 require 'paths'
-package.path = package.path .. ";" .. '../nn_utils/?.lua'
+package.path = package.path .. ";" .. 'toolbox/?.lua'
 
 ----------------------------------------------------------------------
 print '==> processing options'
