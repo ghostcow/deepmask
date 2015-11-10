@@ -122,9 +122,9 @@ function train()
             -- the job callback
             function()
                 if torch.unifrom() > 0.5 then
-                    return dataLoader:get(opt.batchSize,1)
+                    return CocoDataLoader:get(opt.batchSize,1)
                 else
-                    return dataLoader:get(opt.batchSize,2)
+                    return CocoDataLoader:get(opt.batchSize,2)
                 end
             end,
 

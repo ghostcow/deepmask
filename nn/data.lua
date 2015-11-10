@@ -37,9 +37,9 @@ do -- start K datathreads (workers)
             function(idx)
                 -- pass to all workers via upvalue
                 opt = options
-                dataset = torch.dataLoader{dataPath=opt.dataPath,
-                                            cocoImagePath=opt.cocoImagePath,
-                                            negativeRatio=opt.negativeRatio}
+                dataset = torch.CocoDataLoader{dataPath=opt.dataPath,
+                                               cocoImagePath=opt.cocoImagePath,
+                                               negativeRatio=opt.negativeRatio}
                 tid = idx
 
                 -- init thread seed
