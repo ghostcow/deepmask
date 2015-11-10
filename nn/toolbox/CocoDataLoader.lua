@@ -5,10 +5,11 @@ local tablex = require 'pl.tablex'
 local argcheck = require 'argcheck'
 require 'sys'
 require 'math'
-require 'tds'
+require 'utils'
+local tds = require 'tds'
 local gm = require 'graphicsmagick'
 
-local dataset = torch.class('torch.dataLoader')
+local dataset = torch.class('torch.CocoDataLoader')
 
 local initcheck = argcheck{
     pack=true,
@@ -17,15 +18,19 @@ local initcheck = argcheck{
 ]],
     {name="dataPath",
      type="string",
-      help="Path to data tds"},
+     help="Path to data tds"},
+
+    {name="splitName",
+     type="string",
+     help="Data split name"},
 
     {name="cocoImagePath",
-        type="string",
-        help="Path to data tds"},
+     type="string",
+     help="Path to data tds"},
 
     {name="negativeRatio",
-        help="Ratio for negative from batch",
-        default = 0.5},
+     help="Ratio for negative from batch",
+     default = 0.5},
 }
 
 function dataset:__init(...)
@@ -35,20 +40,35 @@ function dataset:__init(...)
     for k,v in pairs(args) do self[k] = v end
 
     -- load ms coco index files
-    local ds = self.dataPath
-    self.img2ann = torch.load(ds .. '.img2ann.tds.t7')
-    self.imgs = torch.load(ds .. '.imgs.tds.t7')
-    self.ann = torch.load(ds .. '.ann.tds.t7')
-
-    -- map from class to list of annotations
+    local ds = paths.concat(self.dataPath, self.splitName)
+    self.instances  = torch.load(ds .. '.instances.tds.t7')
+    self.imgs       = torch.load(ds .. '.imgs.tds.t7')
+    self.img2inst   = torch.load(ds .. '.img2ann.tds.t7')
+    self.class2inst = torch.load(ds .. '.class2instance.tds.t7')
 end
 
 function dataset:loadImg(imgName)
     return image.load(self.cocoImagePath .. '/' .. imgName)
 end
 
-function dataset:samplePositive(img, ann)
+function dataset:samplePositive(class)
     --loads image and annotation and crops / extra: flip,scale and shift
+    local sample
+    while not sample do
+        local inst = self:getInstanceByClass(class)
+        sample = sampleInstance(inst)
+    end
+    return sample
+end
+
+function dataset:getInstanceByClass(class)
+    local list = self.class2inst[class]
+    return list[torch.random(1,list:size(1))]
+end
+
+local function sampleInstance(inst)
+    local ann = self.instances[inst]
+    local img_ann = self.imgs[inst.image_id]
 end
 
 function dataset:sampleNegative()
@@ -56,23 +76,13 @@ function dataset:sampleNegative()
     local index = torch.random()
 end
 
---TODO: change to load by random class first
-function dataset:getByClass(class)
-    local list = self.class2ann[class]
-    return list[torch.random(1,list:size(1))]
-end
-
 -- samples a single image (negative or positive)
 function dataset:sample()
     if torch.uniform() < self.negativeRatio then
-        local class = 0
         return self:sampleNegative()
     else
         local class = torch.random(1,80)
-        -- TODO: loop here until you get a good annotation
-        local ann = self:getByClass(class)
-
-        return self:samplePositive(ann)
+        return self:samplePositive(class)
     end
 end
 
@@ -114,3 +124,6 @@ function dataset:get(batchSize, branch)
     return data, masks, labels, branch
 end
 
+function dataset:sizeTrain()
+    return opt.batchSize * opt.epochSize
+end

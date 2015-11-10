@@ -117,7 +117,7 @@ function train()
     print('==> doing epoch on training data:')
     print("==> online epoch # " .. epoch .. ' [batchSize = ' .. opt.batchSize .. ']')
 
-    for i=1,opt.epochSize do
+    for _=1,opt.epochSize do
         workers:addjob(
             -- the job callback
             function()
