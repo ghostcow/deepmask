@@ -1,19 +1,20 @@
 require 'options'
 require 'paths'
-package.path = package.path .. ";" .. 'toolbox/?.lua'
+package.path = package.path .. ";" .. 'toolbox/?.lua' .. ";" .. '../nn_utlls/?.lua'
 
 ----------------------------------------------------------------------
 print '==> processing options'
 opt = getOptions()
 -- nb of threads and fixed seed (for repeatable experiments)
 torch.setnumthreads(opt.threads)
-torch.manualSeed(opt.seed)
 torch.setdefaulttensortype('torch.FloatTensor')
+torch.manualSeed(opt.seed)
 
 ----------------------------------------------------------------------
 if opt.gpu ~= -1 then
     require 'cutorch'
     cutorch.setDevice(opt.gpu)
+    cutorch.manualSeed(opt.seed)
 end
 
 ----------------------------------------------------------------------

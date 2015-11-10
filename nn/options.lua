@@ -22,7 +22,7 @@ function getOptions()
     cmd:option('--imageDirPath', '/Users/adamp/Research/Data/CASIA/CASIA-WebFace', 'path to dataset directory')
     cmd:option('--imageSize', '1x100x100', 'size of sample images')
     cmd:option('--split', 30, 'precentage of data used for test')
-    cmd:option('--nDonkeys', 4, 'number of threads used for data loading')
+    cmd:option('--nWorkers', 4, 'number of threads used for data loading')
 
 	-- training:
     cmd:option('--testOnly', false, 'should test')

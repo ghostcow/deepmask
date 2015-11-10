@@ -94,17 +94,23 @@ local function tableToOutput(dataTable, maskTable, labelTable)
     return data, masks, labels
 end
 
-function dataset:get(batchSize)
+-- TODO: don't forget about sampling procedure
+function dataset:get(batchSize, branch)
     local dataTable, maskTable, labelTable = {}, {}, {}
 
-    for _ = 1,batchSize do
-        local img, mask, label = self:sample()
-        table.insert(dataTable, img)
-        table.insert(maskTable, mask)
-        table.insert(labelTable, label)
+    if branch == 1 then
+        -- sample masks, only positive here
+        for _ = 1,batchSize do
+            local img, mask, label = self:sample()
+            table.insert(dataTable, img)
+            table.insert(maskTable, mask)
+            table.insert(labelTable, label)
+        end
+    else
+        -- sample scores only
     end
 
     local data, masks, labels = tableToOutput(dataTable, maskTable, labelTable)
-    return data, masks, labels
+    return data, masks, labels, branch
 end
 

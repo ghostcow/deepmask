@@ -11,7 +11,6 @@ require 'options'
 require 'logger'
 require 'assert'
 require 'weight_decays'
-require 'blur'
 
 ----------------------------------------------------------------------
 -- parse command line arguments
@@ -28,7 +27,8 @@ confusion = optim.ConfusionMatrix(dataset.classes)
 -- Retrieve parameters and gradients:
 -- this extracts and flattens all the trainable parameters of the mode
 -- into a 1-dim vector
-parameters,gradParameters = net:getParameters()
+maskParameters,maskGradParameters = mask:getParameters()
+scoreParameters,scoreGradParameters = score:getParameters()
 
 ----------------------------------------------------------------------
 print '==> configuring optimizer - SGD'
@@ -48,9 +48,8 @@ print '==> defining training procedure'
 
 t = 0 -- batch counter
 totalErr = 0 -- totalErr accumelator
-function trainBatch(inputs, targets)
+function trainBatch(inputs, masks, classes, branch)
     inputs = inputs:cuda()
-    targets = targets:double():cuda()
 
     -- disp progress
     xlua.progress(t, dataset:sizeTrain())
@@ -64,76 +63,69 @@ function trainBatch(inputs, targets)
             parameters:copy(x)
         end
 
-        -- reset gradients
-        net:zeroGradParameters()
-
         -- evaluate function for complete mini batch - estimate f
-        local output = net:forward(inputs)
-        local err = criterion:forward(output, targets)
+        local err
+        if branch == 1 then
+            mask:zeroGradParameters()
 
-        -- estimate df/dW
-        local df_do = criterion:backward(output, targets)
-        net:backward(inputs, df_do)
+            masks = masks:cuda()
+            local outputs = mask:forward(inputs)
+            err = maskCriterion:forward(outputs, masks) -- TODO: normalize the loss somehow
+            local df_do = maskCriterion:backward(output, masks)
+            mask:backward(inputs, df_do)
 
-        -- update confusion
-        confusion:batchAdd(output, targets)
+            return err,maskGradParameters
+        else
+            score:zeroGradParameters()
 
-        -- update total err
-        totalErr = totalErr + err
+            classes = classes:cuda()
+            local outputs = score:forward(inputs)
+            err = scoreCriterion:forward(outputs, classes)
+            local df_do = scoreCriterion:backward(output, classes)
+            score:backward(inputs, df_do)
 
-        -- return f and df/dX
-        return err,gradParameters
+            -- update confusion
+            confusion:batchAdd(outputs, classes)
+
+            -- return f and df/dX
+            return err,scoreGradParameters
+        end
     end
 
-    optim.sgd(feval, parameters, optimState)
-    if net.syncParameters ~= nil then
-        net:syncParameters()
+    if branch == 1 then
+        optim.sgd(feval, maskParameters, optimState)
+    else
+        optim.sgd(feval, scoreParameters, optimState)
     end
 
-    -- grabage collection after every batch
+    -- garbage collection after every batch
     collectgarbage()
 end
 
 function train()
-    net:training()
+    mask:training()
+    score:training()
 
     -- epoch tracker
     epoch = epoch or 1
 
     -- local vars
     local timer = torch.Timer()
-    totalErr = 0
     t = 0
 
     -- do one epoch
     print('==> doing epoch on training data:')
     print("==> online epoch # " .. epoch .. ' [batchSize = ' .. opt.batchSize .. ']')
 
-    -- each epoch we shuffle the data
-    local perm = torch.randperm(dataset.trainIndicesSize):long()
-    local epoch_marker = epoch
-    dataset:shuffle(perm)
-
-    for i=1,dataset:sizeTrain(),opt.batchSize do
-        donkeys:addjob(
+    for i=1,opt.epochSize do
+        workers:addjob(
             -- the job callback
             function()
-                -- shuffle the data in each thread, every epoch
-                if tepoch ~= epoch_marker then
-                    tepoch = epoch_marker
-                    dataset:shuffle(perm)
+                if torch.unifrom() > 0.5 then
+                    return dataLoader:get(opt.batchSize,1)
+                else
+                    return dataLoader:get(opt.batchSize,2)
                 end
-
-                local maxIndex = math.min(dataset:sizeTrain(), i + opt.batchSize - 1)
-                local inputs, targets, _ = dataset:get(i, maxIndex, dataset.trainIndices)
-
-                local sigma = opt.blurSigma - opt.blurSigma/opt.epochs*(tepoch-1)
-                if opt.blurSize ~= -1 and sigma > 0 then
-                    inputs = nn.Blur(opt.blurSize, sigma):forward(inputs)
-                end
-
-                collectgarbage()
-                return inputs, targets
             end,
 
             -- the end callback
@@ -143,7 +135,7 @@ function train()
 
     -- wait for all jobs to finish
     print("Waiting for jobs to finish!")
-    donkeys:synchronize()
+    workers:synchronize()
 
     -- time taken
     local time = timer:time().real / dataset:sizeTrain()
