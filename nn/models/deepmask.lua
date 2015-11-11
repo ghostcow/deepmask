@@ -14,6 +14,7 @@ local trunk = torch.load('vgg_model_d_e/vgg16_deepmask.t7')
 -- mask predictor, 56x56
 -- only works for 4d tensors (bcz of transpose layer)
 -- so for single image reshape to batchsize 1
+-- TODO: write cuda implementation for bilinear upsampling layer
 local mask = nn.Sequential()
 mask:add(trunk)
 mask:add(cudnn.SpatialConvolution(512,512,1,1,1,1))
@@ -25,8 +26,9 @@ mask:add(cudnn.ReLU(true))
 mask:add(nn.View(56*56,-1):setNumInputDims(3))
 mask:add(nn.Transpose{2,3})
 mask:add(nn.MyView(56,56))
-mask:add(nn.Type('torch.FloatTensor'))
-mask:add(nn.SpatialReSampling{oheight=224, owidth=224})
+mask:add(nn.SpatialUpSamplingNearest(4))
+--mask:add(nn.Type('torch.FloatTensor'))
+--mask:add(nn.SpatialReSampling{oheight=224, owidth=224})
 mask:add(cudnn.Sigmoid(true))
 
 -- objectness classifier
