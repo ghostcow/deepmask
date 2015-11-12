@@ -125,50 +125,71 @@ function dataset:sampleInstance(inst)
     return nil
 end
 
--- TODO: complete
 function dataset:sampleNegative()
     -- load img and loop until you crop a negative sample
-    local img_id= self.imgidx[torch.random(1,#self.imgidx)]
+    local img_id = self.imgidx[torch.random(1,#self.imgidx)]
     local instances = self.img2inst[img_id]
     -- select scale
     local scale = 2^(torch.random(-4,6)*0.5)
     local x = torch.random(1, self.imgs[img_id].height * scale)
     local y = torch.random(1, self.imgs[img_id].width * scale)
 
-    for k,v in pairs(instances) do
-        local raw_mask = self.raw_mask
-                                :load(paths.concat(self.ann_dir, img_id, v .. '.png'))
-                                :toTensor('float', 'I', 'DHW')
---        if self.instances[v].
-    end
+    for _,v in pairs(instances) do
+        local raw_mask = self.raw_mask:load(paths.concat(self.ann_dir, img_id, v .. '.png'))
+                                      :toTensor('float', 'I', 'DHW')
+        local xcm, ycm = getCenterMass(raw_mask)
+        local long_edge = math.max(v.bbox[3], v.bbox[4])
 
+        if torch.abs(xcm*scale-(x +112-1)) < 32
+                and torch.abs(ycm*scale-(y +112-1)) < 32 then
+            return nil
+        end
+        if long_edge < 256*1/scale and long_edge > 64*1/scale then
+            return nil
+        end
+    end
+    -- if the patch is far enough away (by location, scale) from all instances, crop scale and return
+    local patch = image.crop(self.img:load(paths.concat(self.image_dir, self.imgs[img_id].filename))
+                                     :crop(224,224,x,y)
+                                     :toTensor('float', 'RGB', 'DHW'))
+    return patch
 end
 
--- samples a single image (negative or positive)
-function dataset:sample()
-    if torch.uniform() < self.negativeRatio then
-        return self:sampleNegative()
-    else
+-- samples a single image (negative or positive depending on branch)
+function dataset:sample(branch)
+    if branch == 1 then
         return self:samplePositive()
+    else
+        if torch.uniform() < self.negativeRatio then
+            return self:sampleNegative()
+        else
+            return self:samplePositive()
+        end
     end
 end
 
 -- converts a table/tds.vec of samples (and corresponding labels) to a clean tensor
-local function tableToOutput(patchTable, maskTable, labelTable)
+local function tableToOutput(patchTable, maskTable, labelTable, branch)
     local patches, masks, labels
     local quantity = #patchTable
 
     patches = torch.Tensor(quantity, 3, 224, 224)
-    masks = torch.Tensor(quantity, 1, 224, 224)
     labels = torch.Tensor(quantity)
 
     for i=1,quantity do
         patches[i]:copy(patchTable[i])
-        masks[i]:copy(maskTable[i])
         labels[i] = labelTable[i]
     end
 
-    return patches, masks, labels
+    if branch == 1 then
+        masks = torch.Tensor(quantity, 1, 224, 224)
+        for i=1,quantity do
+            masks[i]:copy(maskTable[i])
+        end
+        return patches, masks, labels
+    else
+        return patches, labels
+    end
 end
 
 -- TODO: change from table to tds if necessary
@@ -178,23 +199,25 @@ function dataset:get(batchSize, branch)
     if branch == 1 then
         -- sample masks, only positive here
         for _=1,batchSize do
-            local img, mask, label = self:samplePositive()
+            local img, mask, label = self:sample(branch)
             table.insert(patchTable, img)
             table.insert(maskTable, mask)
             table.insert(labelTable, label)
         end
+        local patches, masks, labels = tableToOutput(patchTable, maskTable, labelTable, branch)
+        return patches, masks, labels, branch
     else
         -- sample scores only
         for _=1,batchSize do
-            local img, mask, label = self:sample()
-            table.insert(patchTable, img)
-            table.insert(maskTable, mask)
+            local patch, label = self:sample(branch)
+            table.insert(patchTable, patch)
             table.insert(labelTable, label)
         end
+        local patches, labels = tableToOutput(patchTable, nil, labelTable, branch)
+        return patches, labels, branch
     end
 
-    local patches, masks, labels = tableToOutput(patchTable, maskTable, labelTable)
-    return patches, masks, labels, branch
+
 end
 
 function dataset:sizeTrain()
