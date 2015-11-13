@@ -20,7 +20,6 @@ do -- start K datathreads (workers)
     if opt.nWorkers > 0 then
         -- make an upvalue to serialize over to worker threads
         local options = opt
-        local localDataset = dataset
 
         localDataset.sampleHookTrain = nil
         localDataset.sampleHookTest = nil
@@ -28,7 +27,6 @@ do -- start K datathreads (workers)
         workers = Threads(opt.nWorkers,
             function()
                 package.path = package.path .. ";" .. 'toolbox/?.lua' .. ";" .. '../nn_utlls/?.lua'
-                gsdl = require 'sdl2'
                 require 'torch'
                 require 'CocoDataLoader'
                 require 'math'
@@ -37,7 +35,8 @@ do -- start K datathreads (workers)
             function(idx)
                 -- pass to all workers via upvalue
                 opt = options
-                dataset = torch.CocoDataLoader{dataPath=opt.dataPath,
+                dataset = torch.CocoDataLoader{splitName=opt.splitName,
+                                               dataPath=opt.dataPath,
                                                cocoImagePath=opt.cocoImagePath,
                                                negativeRatio=opt.negativeRatio}
                 tid = idx

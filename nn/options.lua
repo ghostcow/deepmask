@@ -18,10 +18,10 @@ function getOptions()
     cmd:option('--debug', false, 'work on small dataset')
 
 	-- data:
-	cmd:option('--dataPath', '', 'path to dataset file - t7 file')
+    cmd:option('--splitName', 'train2014', 'split name')
+	cmd:option('--dataPath', '', 'path to dataset files - *.tds.t7 files')
     cmd:option('--imageDirPath', '/Users/adamp/Research/Data/CASIA/CASIA-WebFace', 'path to dataset directory')
     cmd:option('--imageSize', '1x100x100', 'size of sample images')
-    cmd:option('--split', 30, 'precentage of data used for test')
     cmd:option('--nWorkers', 4, 'number of threads used for data loading')
 
 	-- training:

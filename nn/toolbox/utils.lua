@@ -1,6 +1,6 @@
 require 'sys'
 require 'string'
-tds.hash.__ipairs = tds.hash.__pairs
+local tds = require 'tds'
 
 -- calculates center mass xcm,ycm of grayscale mask in DHW format
 function getCenterMass(input)

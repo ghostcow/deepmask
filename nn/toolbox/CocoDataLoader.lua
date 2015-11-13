@@ -14,8 +14,8 @@ local initcheck = argcheck{
      Coco dataset loader
 ]],
     {name="splitName",
-        type="string",
-        help="Data split name"},
+     type="string",
+     help="Data split name"},
 
     {name="dataPath",
      type="string",
@@ -214,7 +214,7 @@ function dataset:get(batchSize, branch)
             table.insert(labelTable, label)
         end
         local patches, labels = tableToOutput(patchTable, nil, labelTable, branch)
-        return patches, labels, branch
+        return patches, nil, labels, branch
     end
 
 
