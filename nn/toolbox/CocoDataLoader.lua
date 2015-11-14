@@ -3,31 +3,32 @@ local argcheck = require 'argcheck'
 require 'sys'
 require 'math'
 require 'utils'
-local tds = require 'tds'; tds.hash.__ipairs = tds.hash.__pairs
+local tds = require 'tds'
+tds.hash.__ipairs = tds.hash.__pairs
 local gm = require 'graphicsmagick'
 
 local dataset = torch.class('torch.CocoDataLoader')
 
 local initcheck = argcheck{
     pack=true,
-    help=[[
-     Coco dataset loader
-]],
+    help=[[ COCO dataset loader
+    ]],
     {name="splitName",
-     type="string",
-     help="Data split name"},
+        type="string",
+        help="Data split name"},
 
     {name="dataPath",
-     type="string",
-     help="Path to annotations dir (tds, masks)"},
+        type="string",
+        help="Path to annotations dir (tds, masks)"},
 
     {name="cocoImagePath",
-     type="string",
-     help="Path to COCO images"},
+        type="string",
+        help="Path to COCO images"},
 
     {name="negativeRatio",
-     help="Ratio for negative from batch",
-     default = 0.5},
+        type="number",
+        default=0.5,
+        help="Ratio for negative from batch"}
 }
 
 function dataset:__init(...)
@@ -40,18 +41,55 @@ function dataset:__init(...)
     self.image_dir = paths.concat(self.cocoImagePath, self.splitName)
     -- load ms coco index files
     local ds = paths.concat(self.dataPath, self.splitName)
-    self.instances  = torch.load(ds .. '.instances.tds.t7')
-    self.imgs       = torch.load(ds .. '.imgs.tds.t7')
-    self.img2inst   = torch.load(ds .. '.img2ann.tds.t7')
-    self.class2inst = torch.load(ds .. '.class2instance.tds.t7')
-    self.imgidx     = torch.load(ds .. '.imgidx.tds.t7')
+    self.instances = torch.load(ds .. '.instances.tds.t7')
+    self.imgs      = torch.load(ds .. '.imgs.tds.t7')
+    self.imgidx    = torch.load(ds .. '.imgidx.tds.t7')
+    self.img2inst  = torch.load(ds .. '.img2ann.tds.t7')
+    self.class2cat = torch.load(ds .. '.class2cat.tds.t7') -- here 'cat' means the category id (80 of 1,90 range)
+    self.cat2class = torch.load(ds .. '.cat2class.tds.t7') -- class means the class we train with (1,80 range)
+    self.cat2inst  = torch.load(ds .. '.cat2instance.tds.t7')
+
     -- image buffers
     self.img = gm.Image()
-    self.raw_mask = gm.Image()
 end
 
-function dataset:loadImg(imgName)
-    return image.load(self.cocoImagePath .. '/' .. imgName)
+-- TODO: change from table to tds if necessary
+function dataset:get(batchSize, branch)
+    local patchTable, maskTable, labelTable = {}, {}, {}
+
+    if branch == 1 then
+        -- sample masks, only positive here
+        for _=1,batchSize do
+            local patch, mask, label = self:sample(branch)
+            table.insert(patchTable, patch)
+            table.insert(maskTable, mask)
+            table.insert(labelTable, label)
+        end
+        local patches, masks, labels = tableToOutput(patchTable, maskTable, labelTable, branch)
+        return patches, masks, labels, branch
+    else
+        -- sample scores only
+        for _=1,batchSize do
+            local patch, label = self:sample(branch)
+            table.insert(patchTable, patch)
+            table.insert(labelTable, label)
+        end
+        local patches, labels = tableToOutput(patchTable, nil, labelTable, branch)
+        return patches, nil, labels, branch
+    end
+end
+
+-- samples a single image (negative or positive depending on branch)
+function dataset:sample(branch)
+    if branch == 1 then
+        return self:samplePositive()
+    else
+        if torch.uniform() < self.negativeRatio then
+            return self:sampleNegative()
+        else
+            return self:samplePositive()
+        end
+    end
 end
 
 function dataset:samplePositive()
@@ -68,20 +106,19 @@ function dataset:samplePositive()
 end
 
 function dataset:getInstanceByClass(class)
-    local list = self.class2inst[class]
+    local list = self.cat2inst[self.class2cat[class]]
     return list[torch.random(1,#list)]
 end
 
 function dataset:sampleInstance(inst)
     local ann = self.instances[inst]
-    local img_ann = self.imgs[inst.image_id]
-
-    local img_path = paths.concat(self.image_dir, img_ann.filename)
-    local im = self.img:load(img_path):toTensor('float', 'RGB', 'DHW', true)
-    local raw_mask_path = paths.concat(self.ann_dir, img_ann.id, ann.id .. '.png')
-    local raw_mask = self.raw_mask:load(raw_mask_path):toTensor('float', 'I', 'DHW', true)
+    local img_ann = self.imgs[ann.image_id]
 
     if ann.iscrowd == 0 then
+
+        local im = self:loadImg(img_ann.file_name)
+        local raw_mask = self:loadMask(img_ann.id, ann.id)
+
         local xcm, ycm = getCenterMass(raw_mask)
         -- get long edge
         local long_edge = math.max(ann.bbox[3], ann.bbox[4])
@@ -114,10 +151,8 @@ function dataset:sampleInstance(inst)
                     patch = image.hflip(patch)
                     mask = image.hflip(mask)
                 end
-                -- scale to 224x224
-                patch = image.scale(patch, 224, 224)
-                mask = image.scale(mask, 224, 224)
-                return patch, mask, ann.category_id
+                -- scale to 224x224 and return
+                return image.scale(patch, 224, 224), image.scale(mask, 224, 224), self.cat2class[ann.category_id]
             end
         end
     end
@@ -125,47 +160,51 @@ function dataset:sampleInstance(inst)
     return nil
 end
 
+-- TODO: debug
 function dataset:sampleNegative()
     -- load img and loop until you crop a negative sample
-    local img_id = self.imgidx[torch.random(1,#self.imgidx)]
-    local instances = self.img2inst[img_id]
-    -- select scale
-    local scale = 2^(torch.random(-4,6)*0.5)
-    local x = torch.random(1, self.imgs[img_id].height * scale)
-    local y = torch.random(1, self.imgs[img_id].width * scale)
+    local imgId = self.imgidx[torch.random(1,#self.imgidx)]
+    local instances = self.img2inst[imgId]
+    local rawPatch
+    while rawPatch == nil do
 
-    for _,v in pairs(instances) do
-        local raw_mask = self.raw_mask:load(paths.concat(self.ann_dir, img_id, v .. '.png'))
-                                      :toTensor('float', 'I', 'DHW')
-        local xcm, ycm = getCenterMass(raw_mask)
-        local long_edge = math.max(v.bbox[3], v.bbox[4])
+        -- select scale
+        local scale = 2^(torch.random(-4,6)*0.5)
 
-        if torch.abs(xcm*scale-(x +112-1)) < 32
-                and torch.abs(ycm*scale-(y +112-1)) < 32 then
-            return nil
+        -- random x,y coords from target image
+        local x = torch.random(1, self.imgs[imgId].height * scale)
+        local y = torch.random(1, self.imgs[imgId].width * scale)
+
+        -- determine if the patch is far enough away (by location, scale) from all instances
+        for _,instIdx in pairs(instances) do
+
+            local instance = self.instances[instIdx]
+            local raw_mask = self:loadMask(imgId, instIdx)
+            local xcm, ycm = getCenterMass(raw_mask)
+            local long_edge = math.max(instance.bbox[3], instance.bbox[4])
+
+            if torch.abs(xcm-(x+112-1)/scale) < 32/scale
+                    and torch.abs(ycm-(y+112-1)/scale) < 32/scale then
+                return nil
+            end
+            if long_edge < 256/scale and long_edge > 64/scale then
+                return nil
+            end
         end
-        if long_edge < 256*1/scale and long_edge > 64*1/scale then
-            return nil
-        end
+        rawPatch = image.crop(self:loadImg(self.imgs[imgId].file_name), x/scale,y/scale,(x+224-1)/scale,(y+224-1)/scale)
     end
-    -- if the patch is far enough away (by location, scale) from all instances, crop scale and return
-    local patch = image.crop(self.img:load(paths.concat(self.image_dir, self.imgs[img_id].filename))
-                                     :crop(224,224,x,y)
-                                     :toTensor('float', 'RGB', 'DHW'))
-    return patch
+    -- scale and return
+    return image.scale(rawPatch, 224, 224)
 end
 
--- samples a single image (negative or positive depending on branch)
-function dataset:sample(branch)
-    if branch == 1 then
-        return self:samplePositive()
-    else
-        if torch.uniform() < self.negativeRatio then
-            return self:sampleNegative()
-        else
-            return self:samplePositive()
-        end
-    end
+function dataset:loadMask(imgId, instId)
+    local rawMaskPath = paths.concat(self.ann_dir, imgId, instId .. '.png')
+    return self.img:load(rawMaskPath):toTensor('float', 'I', 'DHW')
+end
+
+function dataset:loadImg(imgName)
+    local imgPath = paths.concat(self.image_dir, imgName)
+    return self.img:load(imgPath):toTensor('float', 'RGB', 'DHW')
 end
 
 -- converts a table/tds.vec of samples (and corresponding labels) to a clean tensor
@@ -190,34 +229,6 @@ local function tableToOutput(patchTable, maskTable, labelTable, branch)
     else
         return patches, labels
     end
-end
-
--- TODO: change from table to tds if necessary
-function dataset:get(batchSize, branch)
-    local patchTable, maskTable, labelTable = {}, {}, {}
-
-    if branch == 1 then
-        -- sample masks, only positive here
-        for _=1,batchSize do
-            local img, mask, label = self:sample(branch)
-            table.insert(patchTable, img)
-            table.insert(maskTable, mask)
-            table.insert(labelTable, label)
-        end
-        local patches, masks, labels = tableToOutput(patchTable, maskTable, labelTable, branch)
-        return patches, masks, labels, branch
-    else
-        -- sample scores only
-        for _=1,batchSize do
-            local patch, label = self:sample(branch)
-            table.insert(patchTable, patch)
-            table.insert(labelTable, label)
-        end
-        local patches, labels = tableToOutput(patchTable, nil, labelTable, branch)
-        return patches, nil, labels, branch
-    end
-
-
 end
 
 function dataset:sizeTrain()

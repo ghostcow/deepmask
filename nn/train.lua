@@ -81,7 +81,7 @@ function trainBatch(inputs, masks, classes, branch)
             classes = classes:cuda()
             local outputs = score:forward(inputs)
             err = scoreCriterion:forward(outputs, classes)
-            local df_do = scoreCriterion:backward(output, classes)
+            local df_do = scoreCriterion:backward(outputs, classes)
             score:backward(inputs, df_do)
 
             -- update confusion
