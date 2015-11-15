@@ -43,7 +43,7 @@ end
 function torch.vstack(intable)
     local cattable = {}
     local dim
-    for k,v in pairs(intable) do
+    for _,v in pairs(intable) do
         dim = torch.LongStorage(v:dim()+1):fill(1)
         for i=1,v:dim() do dim[i+1]=v:size(i) end
         table.insert(cattable, v:view(dim))
