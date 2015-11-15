@@ -53,6 +53,28 @@ function dataset:__init(...)
     self.img = gm.Image()
 end
 
+-- converts a table/tds.vec of samples (and corresponding labels) to a clean tensor
+local function tableToOutput(patchTable, maskTable, labelTable, branch)
+    local patches, masks, labels
+    local quantity = #patchTable
+    patches = torch.Tensor(quantity, 3, 224, 224)
+    labels = torch.Tensor(quantity)
+    for i=1,quantity do
+        patches[i]:copy(patchTable[i])
+        labels[i] = labelTable[i]
+    end
+
+    if branch == 1 then
+        masks = torch.Tensor(quantity, 1, 224, 224)
+        for i=1,quantity do
+            masks[i]:copy(maskTable[i])
+        end
+        return patches, masks, labels
+    else
+        return patches, labels
+    end
+end
+
 -- TODO: change from table to tds if necessary
 function dataset:get(batchSize, branch)
     local patchTable, maskTable, labelTable = {}, {}, {}
@@ -82,17 +104,17 @@ end
 -- samples a single image (negative or positive depending on branch)
 function dataset:sample(branch)
     if branch == 1 then
-        return self:samplePositive()
+        return self:samplePositive(branch)
     else
         if torch.uniform() < self.negativeRatio then
             return self:sampleNegative()
         else
-            return self:samplePositive()
+            return self:samplePositive(branch)
         end
     end
 end
 
-function dataset:samplePositive()
+function dataset:samplePositive(branch)
     -- returns a sample with an object in it,
     -- randomized over class, augmentations:
     -- scale deformation, translation shift, flipping.
@@ -102,7 +124,12 @@ function dataset:samplePositive()
         local inst = self:getInstanceByClass(class)
         patch, mask, label = self:sampleInstance(inst)
     end
-    return patch, mask, label
+
+    if branch == 1 then
+        return patch, mask, label
+    else
+        return patch, label
+    end
 end
 
 function dataset:getInstanceByClass(class)
@@ -162,39 +189,54 @@ end
 
 -- TODO: debug
 function dataset:sampleNegative()
-    -- load img and loop until you crop a negative sample
-    local imgId = self.imgidx[torch.random(1,#self.imgidx)]
-    local instances = self.img2inst[imgId]
     local rawPatch
     while rawPatch == nil do
+        -- load img and loop until you crop a negative sample
+        local imgId = self.imgidx[torch.random(1,#self.imgidx)]
+        local instances = self.img2inst[imgId]
 
         -- select scale
         local scale = 2^(torch.random(-4,6)*0.5)
 
         -- random x,y coords from target image
-        local x = torch.random(1, self.imgs[imgId].height * scale)
-        local y = torch.random(1, self.imgs[imgId].width * scale)
-
-        -- determine if the patch is far enough away (by location, scale) from all instances
-        for _,instIdx in pairs(instances) do
-
-            local instance = self.instances[instIdx]
-            local raw_mask = self:loadMask(imgId, instIdx)
-            local xcm, ycm = getCenterMass(raw_mask)
-            local long_edge = math.max(instance.bbox[3], instance.bbox[4])
-
-            if torch.abs(xcm-(x+112-1)/scale) < 32/scale
-                    and torch.abs(ycm-(y+112-1)/scale) < 32/scale then
-                return nil
+        local x = torch.random(1, self.imgs[imgId].width * scale)
+        local y = torch.random(1, self.imgs[imgId].height * scale)
+        if checkBoundaries(x/scale, y/scale,
+            (x+224-1)/scale, (y+224-1)/scale,
+            self.imgs[imgId]) then
+            -- determine if the patch is far enough away (by location, scale) from all instances
+            local tooClose
+            for _,instIdx in pairs(instances) do
+                local instance = self.instances[instIdx]
+                if instance.iscrowd == 0 and self:instanceTooClose(x,y,imgId,instIdx,instance,scale) then
+                    tooClose = true
+                    break
+                end
             end
-            if long_edge < 256/scale and long_edge > 64/scale then
-                return nil
+            if not tooClose then
+                rawPatch = image.crop(self:loadImg(self.imgs[imgId].file_name),
+                    x/scale, y/scale,
+                    (x+224-1)/scale, (y+224-1)/scale)
             end
         end
-        rawPatch = image.crop(self:loadImg(self.imgs[imgId].file_name), x/scale,y/scale,(x+224-1)/scale,(y+224-1)/scale)
     end
-    -- scale and return
-    return image.scale(rawPatch, 224, 224)
+    -- scale and return. class 81 is background
+    return image.scale(rawPatch, 224, 224), 81
+end
+
+function dataset:instanceTooClose(x, y, imgId, instIdx, instance, scale)
+    local raw_mask = self:loadMask(imgId, instIdx)
+    local xcm, ycm = getCenterMass(raw_mask)
+    local long_edge = math.max(instance.bbox[3], instance.bbox[4])
+
+    if torch.abs(xcm-(x+112-1)/scale) < 32/scale
+            and torch.abs(ycm-(y+112-1)/scale) < 32/scale then
+        return true
+    end
+    if long_edge < 256/scale and long_edge > 64/scale then
+        return true
+    end
+    return false
 end
 
 function dataset:loadMask(imgId, instId)
@@ -205,30 +247,6 @@ end
 function dataset:loadImg(imgName)
     local imgPath = paths.concat(self.image_dir, imgName)
     return self.img:load(imgPath):toTensor('float', 'RGB', 'DHW')
-end
-
--- converts a table/tds.vec of samples (and corresponding labels) to a clean tensor
-local function tableToOutput(patchTable, maskTable, labelTable, branch)
-    local patches, masks, labels
-    local quantity = #patchTable
-
-    patches = torch.Tensor(quantity, 3, 224, 224)
-    labels = torch.Tensor(quantity)
-
-    for i=1,quantity do
-        patches[i]:copy(patchTable[i])
-        labels[i] = labelTable[i]
-    end
-
-    if branch == 1 then
-        masks = torch.Tensor(quantity, 1, 224, 224)
-        for i=1,quantity do
-            masks[i]:copy(maskTable[i])
-        end
-        return patches, masks, labels
-    else
-        return patches, labels
-    end
 end
 
 function dataset:sizeTrain()
