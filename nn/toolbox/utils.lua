@@ -16,7 +16,7 @@ end
 function checkBoundaries(x1, y1, x2, y2, img)
     --[[
         check if crop box fits in image around obj center of mass
-        img is the image annotation object
+        img is the image annotation object (from MSCOCO)
         assume x1<x2, y1<y2
         ]]
     if x1<1 or x2>img.width

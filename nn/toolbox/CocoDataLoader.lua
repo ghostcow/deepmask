@@ -150,7 +150,7 @@ function dataset:sampleInstance(inst)
         -- get long edge
         local long_edge = math.max(ann.bbox[3], ann.bbox[4])
         -- check to see if obj is at an acceptable scale
-        if long_edge >= 15 and long_edge <= 304 then
+        if long_edge >= 26 and long_edge <= 304 then
 
             -- scale deformation
             local scale = 2^(torch.random(-1,1)*0.25)

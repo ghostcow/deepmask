@@ -33,16 +33,19 @@ else
 end
 
 -- 2. Create Criterion
---TODO: define criterions
-criterion = nn.ClassNLLCriterion()
-print('=> Model')
-print(model)
-print('=> Criterion')
-print(criterion)
+-- mask criterion
+mcriterion = nn.BCECriterion()
+print('=> Mask Prediction Model')
+print(mask)
+print('=> Mask Criterion')
+print(mcriterion)
+-- score criterion
+scriterion = nn.CrossEntropyCriterion()
+print('=> Score Prediction Model')
+print(score)
+print('=> Score Criterion')
+print(scriterion)
 
-score:cuda()
-mask:cuda()
---
 ---- 3. Check for parallel training mode
 --if opt.parallel then
 --    net = nn.DataParallelTable(1)
@@ -58,5 +61,8 @@ mask:cuda()
 --end
 
 -- 4. Convert Criterion to CUDA
-print('=> Converting Criterion to CUDA')
-criterion:cuda()
+print('=> Converting Criterions and Models to CUDA')
+mask:cuda()
+mcriterion:cuda()
+score:cuda()
+scriterion:cuda()

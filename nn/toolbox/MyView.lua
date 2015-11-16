@@ -1,5 +1,7 @@
 local MyView, parent = torch.class('nn.MyView', 'nn.Module')
-
+--[[
+reshapes the last two dims to h,w
+ ]]
 function MyView:__init(h,w)
     parent.__init(self)
     self.h = h
