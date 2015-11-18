@@ -2,25 +2,12 @@
 
 cd nn
 
-# Original command
-#th doall.lua --imageDirPath  /home/adampolyak/datasets/CASIA/aligned_scratch \
-#             --imageSize 1x100x100 \
-#             --split 10 \
-#             --netType scratch \
-#             --save ~/results/scratch_blur \
-#             --blurSize 5 \
-#             --blurSigma 10 \
-#             --momentum 0.9 \
-#             --learningRate 0.001 \
-#             --batchSize 128 \
-#             --epochs 10
-
 # Train
-th doall.lua --dataPath  /home/adampolyak/results/scratch_blur/dataset.t7    \
-             --netType scratch \
-             --save ~/results/scratch_blur/results_1 \
-             --blurSize 5 \
-             --blurSigma 10 \
-             --momentum 0.9 \
-             --learningRate 0.01 \
-             --batchSize 128
+th doall.lua --gpu 0 \
+             --splitName smallval2014 \
+             --dataPath /home/lioruzan/obj_detection_proj/mscoco.torch/annotations \
+             --imageDirPath /home/lioruzan/obj_detection_proj/data/coco/images \
+             --epochs 1 \
+             --learningRate 0.001 \
+             --batchSize 32 \
+             --epochSize 1

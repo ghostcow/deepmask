@@ -1,6 +1,6 @@
 require 'options'
 require 'paths'
-package.path = package.path .. ";" .. 'toolbox/?.lua' .. ";" .. '../nn_utlls/?.lua'
+package.path = package.path .. ";" .. 'toolbox/?.lua' .. ";" .. '../nn_utils/?.lua'
 
 ----------------------------------------------------------------------
 print '==> processing options'
@@ -22,15 +22,15 @@ print '==> executing all'
 dofile 'data.lua'
 paths.dofile('model.lua')
 paths.dofile('train.lua')
-paths.dofile('test.lua')
+--paths.dofile('test.lua')
 
 ----------------------------------------------------------------------
 print '==> training!'
 
 epoch = 1
-test()
+--test()
 
 while epoch <= opt.epochs and not opt.testOnly do
     train()
-    test()
+--    test()
 end

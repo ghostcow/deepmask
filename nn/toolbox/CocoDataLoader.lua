@@ -37,17 +37,17 @@ function dataset:__init(...)
     local args = initcheck(...)
     for k,v in pairs(args) do self[k] = v end
     -- some paths
-    self.ann_dir = paths.concat(self.dataPath, self.splitName .. '_anns')
+    self.ann_dir = paths.concat(self.dataPath, self.splitName .. '_masks')
     self.image_dir = paths.concat(self.cocoImagePath, self.splitName)
     -- load ms coco index files
-    local ds = paths.concat(self.dataPath, self.splitName)
-    self.instances = torch.load(ds .. '.instances.tds.t7')
-    self.imgs      = torch.load(ds .. '.imgs.tds.t7')
-    self.imgidx    = torch.load(ds .. '.imgidx.tds.t7')
-    self.img2inst  = torch.load(ds .. '.img2ann.tds.t7')
-    self.class2cat = torch.load(ds .. '.class2cat.tds.t7') -- here 'cat' means the category id (80 of 1,90 range)
-    self.cat2class = torch.load(ds .. '.cat2class.tds.t7') -- class means the class we train with (1,80 range)
-    self.cat2inst  = torch.load(ds .. '.cat2instance.tds.t7')
+    local prefix = paths.concat(self.dataPath, self.splitName)
+    self.instances = torch.load(prefix .. '.instances.tds.t7')
+    self.imgs      = torch.load(prefix .. '.imgs.tds.t7')
+    self.imgidx    = torch.load(prefix .. '.imgidx.tds.t7')
+    self.img2inst  = torch.load(prefix .. '.img2inst.tds.t7')
+    self.class2cat = torch.load(prefix .. '.class2cat.tds.t7') -- here 'cat' means the category id (80 of 1,90 range)
+    self.cat2class = torch.load(prefix .. '.cat2class.tds.t7') -- class means the class we train with (1,80 range)
+    self.cat2inst  = torch.load(prefix .. '.cat2instance.tds.t7')
 
     -- image buffers
     self.img = gm.Image()

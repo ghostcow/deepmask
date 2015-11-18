@@ -38,10 +38,6 @@ function getOptions()
     cmd:option('--weightDecay', 5e-4, 'weight decay for fully connected layer')
     cmd:option('--momentum', 0.9, 'momentum for SGD')
 
-    -- data augmentation
-    cmd:option('--blurSize', -1, 'gaussian kernel size')
-    cmd:option('--blurSigma', 10, 'gaussiam sigma param')
-
     cmd:text()
     
     local opt = cmd:parse(arg or {})
