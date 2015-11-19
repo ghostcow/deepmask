@@ -37,25 +37,18 @@ scoreParameters, scoreGradParameters = score:getParameters()
 ----------------------------------------------------------------------
 print '==> configuring optimizer - SGD'
 
---optimState = {}
---
---if opt.loadState ~= 'none' then
---    optimState = torch.load(opt.loadState)
---end
---
---optimState.learningRate = opt.learningRate
---optimState.momentum = opt.momentum
---optimState.weightDecay = opt.weightDecay
+optimState = {}
 
-optimStateMask = tds.hash()
-optimStateMask.learningRate = opt.learningRate
-optimStateMask.momentum = opt.momentum
-optimStateMask.weightDecay = opt.weightDecay
+if opt.loadState ~= 'none' then
+    optimState = torch.load(opt.loadState)
+end
 
-optimStateScore = tds.hash()
-optimStateScore.learningRate = opt.learningRate
-optimStateScore.momentum = opt.momentum
-optimStateScore.weightDecay = opt.weightDecay
+optimState.learningRate = opt.learningRate
+optimState.momentum = opt.momentum
+optimState.weightDecay = opt.weightDecay
+
+optimStateMask = tx.copy(optimState)
+optimStateScore = tx.copy(optimState)
 
 ----------------------------------------------------------------------
 print '==> defining training procedure'
@@ -65,9 +58,8 @@ totalErr = 0 -- totalErr accumelator
 function trainBatch(branch, classes, inputs, masks)
     inputs = inputs:cuda()
 
-    -- disp progress
+    -- current progress
     xlua.progress(t, sizeTrain())
-    t = t + inputs:size(1)
 
     -- create closure to evaluate f(X) and df/dX
     local feval = function(x)
@@ -118,6 +110,10 @@ function trainBatch(branch, classes, inputs, masks)
         optim.sgd(feval, scoreParameters, optimStateScore)
     end
 
+    -- update progress
+    t = t + inputs:size(1)
+    xlua.progress(t, sizeTrain())
+
     -- garbage collection after every batch
     collectgarbage()
 end
@@ -164,21 +160,19 @@ function train()
     -- print confusion matrix  & error funstion values
     logConfusion(confusion, totalErr)
     -- save current networks
-    logNetwork(mask, 'deepmask_mask')
-    logNetwork(score, 'deepmask_score')
+--    logNetwork(mask, 'deepmask_mask')
+--    logNetwork(score, 'deepmask_score')
     -- save optim states
-    logOptimState(optimStateMask, 'deepmask_mask')
-    collectgarbage()
-    logOptimState(optimStateScore, 'deepmask_score')
-    collectgarbage()
+--    logOptimState(optimStateMask, 'deepmask_mask')
+--    logOptimState(optimStateScore, 'deepmask_score')
 
     -- check all model parameters validity
     -- just print warning for now
-    useAssert=false
-    MyAssert(isValid(maskParameters), "non-valid model parameters")
-    MyAssert(isValid(maskGradParameters), "non-valid model gradParameters")
-    MyAssert(isValid(scoreParameters), "non-valid model parameters")
-    MyAssert(isValid(scoreGradParameters), "non-valid model gradParameters")
+--    useAssert=false
+--    MyAssert(isValid(maskParameters), "non-valid model parameters")
+--    MyAssert(isValid(maskGradParameters), "non-valid model gradParameters")
+--    MyAssert(isValid(scoreParameters), "non-valid model parameters")
+--    MyAssert(isValid(scoreGradParameters), "non-valid model gradParameters")
 
     -- next epoch
     confusion:zero()
