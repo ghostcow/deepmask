@@ -6,7 +6,7 @@ package.path = package.path .. ";" .. 'toolbox/?.lua' .. ";" .. '../nn_utils/?.l
 print '==> processing options'
 opt = getOptions()
 -- nb of threads and fixed seed (for repeatable experiments)
-torch.setnumthreads(opt.threads)
+--torch.setnumthreads(opt.threads)
 torch.setdefaulttensortype('torch.FloatTensor')
 torch.manualSeed(opt.seed)
 
@@ -33,4 +33,5 @@ epoch = 1
 while epoch <= opt.epochs and not opt.testOnly do
     train()
 --    test()
+    collectgarbage()
 end

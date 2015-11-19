@@ -10,4 +10,5 @@ th doall.lua --gpu 1 \
              --epochs 10 \
              --learningRate 0.001 \
              --batchSize 32 \
-             --epochSize 125
+             --epochSize 125 \
+             --nWorkers 0

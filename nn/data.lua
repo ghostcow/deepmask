@@ -50,5 +50,9 @@ do -- start K datathreads (workers)
         function workers:addjob(f1, f2) f2(f1()) end
         function workers:synchronize() end
         function workers:terminate() end
+        dataset = torch.CocoDataLoader{splitName=opt.splitName,
+                                       dataPath=opt.dataPath,
+                                       imageDirPath=opt.imageDirPath,
+                                       negativeRatio=opt.negativeRatio}
     end
 end

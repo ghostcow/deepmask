@@ -55,7 +55,7 @@ print '==> defining training procedure'
 
 t = 0 -- batch counter
 totalErr = 0 -- totalErr accumelator
-function trainBatch(branch, classes, inputs, masks)
+local function trainBatch(branch, classes, inputs, masks)
     inputs = inputs:cuda()
 
     -- current progress
@@ -138,8 +138,10 @@ function train()
             -- the job callback
             function()
                 if torch.uniform() > 0.5 then
+                    -- optimize branch 1- mask
                     return dataset:get(opt.batchSize,1)
                 else
+                    -- optimize branch 2- score
                     return dataset:get(opt.batchSize,2)
                 end
             end,
@@ -147,6 +149,7 @@ function train()
             -- the end callback
             -- ran in the main thread
             trainBatch)
+        collectgarbage()
     end
 
     -- wait for all jobs to finish

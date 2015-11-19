@@ -121,9 +121,10 @@ function dataset:samplePositive(branch)
     -- randomized over class, augmentations:
     -- scale deformation, translation shift, flipping.
     local class = torch.random(1,80)
-    local patch, mask, label
+    local inst, patch, mask, label
+
     while not patch do
-        local inst = self:getInstanceByClass(class)
+        inst = self:getInstanceByClass(class)
         patch, mask, label = self:sampleInstance(inst)
     end
 
@@ -203,9 +204,9 @@ function dataset:sampleNegative()
         -- random x,y coords from target image
         local x = torch.random(1, self.imgs[imgId].width * scale)
         local y = torch.random(1, self.imgs[imgId].height * scale)
-        if checkBoundaries(x/scale, y/scale,
-            (x+224-1)/scale, (y+224-1)/scale,
-            self.imgs[imgId]) then
+
+        if checkBoundaries(x/scale, y/scale, (x+224-1)/scale, (y+224-1)/scale, self.imgs[imgId]) then
+
             -- determine if the patch is far enough away (by location, scale) from all instances
             local tooClose
             for _,instIdx in pairs(instances) do
