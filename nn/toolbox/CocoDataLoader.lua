@@ -6,6 +6,7 @@ require 'utils'
 local tds = require 'tds'
 tds.hash.__ipairs = tds.hash.__pairs
 local gm = require 'graphicsmagick'
+require 'image'
 
 local dataset = torch.class('torch.CocoDataLoader')
 
@@ -21,7 +22,7 @@ local initcheck = argcheck{
         type="string",
         help="Path to annotations dir (tds, masks)"},
 
-    {name="cocoImagePath",
+    {name="imageDirPath",
         type="string",
         help="Path to COCO images"},
 
@@ -38,7 +39,7 @@ function dataset:__init(...)
     for k,v in pairs(args) do self[k] = v end
     -- some paths
     self.ann_dir = paths.concat(self.dataPath, self.splitName .. '_masks')
-    self.image_dir = paths.concat(self.cocoImagePath, self.splitName)
+    self.image_dir = paths.concat(self.imageDirPath, self.splitName)
     -- load ms coco index files
     local prefix = paths.concat(self.dataPath, self.splitName)
     self.instances = torch.load(prefix .. '.instances.tds.t7')

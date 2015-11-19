@@ -15,7 +15,9 @@ if opt.retrain ~= 'none' then
 else
     local networkConfigPath = 'models/' .. opt.netType .. '.lua'
     print('=> Creating model from file: ' .. networkConfigPath)
-    mask, score = require(networkConfigPath)
+    mask, score = dofile(networkConfigPath)
+    if mask == nil then print('mask is nil') end
+    if score == nil then print('score is nil') end
 --    -- Initilize model according to MSR
 --    print('=> Initializing weights according to MSR')
 --    local function MSRinit(net)
@@ -45,20 +47,6 @@ print('=> Score Prediction Model')
 print(score)
 print('=> Score Criterion')
 print(scriterion)
-
----- 3. Check for parallel training mode
---if opt.parallel then
---    net = nn.DataParallelTable(1)
---    for i = opt.gpu, (opt.gpu+1) do
---        cutorch.setDevice(i)
---        net:add(model:clone():cuda(), i)
---    end
---
---    cutorch.setDevice(opt.gpu)
---else
---    model:cuda()
---    net = model
---end
 
 -- 4. Convert Criterion to CUDA
 print('=> Converting Criterions and Models to CUDA')

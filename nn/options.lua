@@ -25,6 +25,7 @@ function getOptions()
     cmd:option('--nWorkers', 4, 'number of threads used for data loading')
 
 	-- training:
+    cmd:option('--negativeRatio', 0.5, 'ratio between positive and negative samples in score branch')
     cmd:option('--testOnly', false, 'should test')
 	cmd:option('--save', '../results', 'subdirectory to save/log experiments in')
 	cmd:option('--plot', false, 'live plot')

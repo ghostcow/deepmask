@@ -6,8 +6,8 @@ local tds = require 'tds'
 function getCenterMass(input)
     local M = torch.sum(input)
     local preWeight = torch.ones(input:size())
-    local xWeights = torch.cumsum(preWeight, 3)
-    local yWeights = torch.cumsum(preWeight, 2)
+    local xWeights = torch.cumsum(preWeight, 3):typeAs(input)
+    local yWeights = torch.cumsum(preWeight, 2):typeAs(input)
     local xSum = torch.sum(torch.cmul(input, xWeights))
     local ySum = torch.sum(torch.cmul(input, yWeights))
     return xSum/M, ySum/M
@@ -58,3 +58,17 @@ function time_func(msg, f, ...)
     return output
 end
 
+function getClasses()
+    -- generate class to classname table for the confusion matrix
+    local categories = torch.load(paths.concat(opt.dataPath, 'categories.tds.t7'))
+    local classes = {}
+    classes[81] = 'background'
+    for k,_ in pairs(categories) do
+        classes[k] = categories[k].name
+    end
+    return classes
+end
+
+function sizeTrain()
+    return opt.batchSize * opt.epochSize
+end

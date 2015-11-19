@@ -3,8 +3,7 @@ require 'nn'      -- provides all sorts of trainable modules/layers
 require 'nnx'
 require 'cunn'
 require 'cudnn'
-require 'toolbox'
-
+require 'MyView'
 ----------------------------------------------------------------------
 print '==> construct model'
 

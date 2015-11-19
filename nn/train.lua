@@ -11,6 +11,7 @@ require 'options'
 require 'logger'
 require 'assert'
 require 'weight_decays'
+require 'utils'
 
 ----------------------------------------------------------------------
 -- parse command line arguments
@@ -22,7 +23,7 @@ end
 ----------------------------------------------------------------------
 print '==> defining some tools'
 -- This matrix records the current confusion across classes
-confusion = optim.ConfusionMatrix(dataset.classes)
+confusion = optim.ConfusionMatrix(getClasses())
 
 -- Retrieve parameters and gradients:
 -- this extracts and flattens all the trainable parameters of the mode
@@ -41,7 +42,7 @@ end
 
 optimState.learningRate = opt.learningRate
 optimState.momentum = opt.momentum
-optimState.weightDecays = getWeightDecays(opt.weightDecay, parameters, gradParameters)
+optimState.weightDecay = opt.weightDecay
 
 ----------------------------------------------------------------------
 print '==> defining training procedure'
@@ -52,7 +53,7 @@ function trainBatch(inputs, masks, classes, branch)
     inputs = inputs:cuda()
 
     -- disp progress
-    xlua.progress(t, dataset:sizeTrain())
+    xlua.progress(t, sizeTrain())
     t = t + inputs:size(1)
 
     -- create closure to evaluate f(X) and df/dX
@@ -121,7 +122,7 @@ function train()
         workers:addjob(
             -- the job callback
             function()
-                if torch.unifrom() > 0.5 then
+                if torch.uniform() > 0.5 then
                     return dataset:get(opt.batchSize,1)
                 else
                     return dataset:get(opt.batchSize,2)
@@ -138,7 +139,7 @@ function train()
     workers:synchronize()
 
     -- time taken
-    local time = timer:time().real / dataset:sizeTrain()
+    local time = timer:time().real / sizeTrain()
     print("\n==> time to learn 1 sample = " .. (time*1000) .. 'ms')
 
     -- print confusion matrix  & error funstion values
