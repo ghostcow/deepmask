@@ -12,6 +12,9 @@ require 'logger'
 require 'assert'
 require 'weight_decays'
 require 'utils'
+local tx = require'pl.tablex'
+local tds = require 'tds'
+tds.hash.__ipairs = tds.hash.__pairs
 
 ----------------------------------------------------------------------
 -- parse command line arguments
@@ -28,28 +31,38 @@ confusion = optim.ConfusionMatrix(getClasses())
 -- Retrieve parameters and gradients:
 -- this extracts and flattens all the trainable parameters of the mode
 -- into a 1-dim vector
-maskParameters,maskGradParameters = mask:getParameters()
-scoreParameters,scoreGradParameters = score:getParameters()
+maskParameters, maskGradParameters = mask:getParameters()
+scoreParameters, scoreGradParameters = score:getParameters()
 
 ----------------------------------------------------------------------
 print '==> configuring optimizer - SGD'
 
-optimState = {}
+--optimState = {}
+--
+--if opt.loadState ~= 'none' then
+--    optimState = torch.load(opt.loadState)
+--end
+--
+--optimState.learningRate = opt.learningRate
+--optimState.momentum = opt.momentum
+--optimState.weightDecay = opt.weightDecay
 
-if opt.loadState ~= 'none' then
-    optimState = torch.load(opt.loadState)
-end
+optimStateMask = tds.hash()
+optimStateMask.learningRate = opt.learningRate
+optimStateMask.momentum = opt.momentum
+optimStateMask.weightDecay = opt.weightDecay
 
-optimState.learningRate = opt.learningRate
-optimState.momentum = opt.momentum
-optimState.weightDecay = opt.weightDecay
+optimStateScore = tds.hash()
+optimStateScore.learningRate = opt.learningRate
+optimStateScore.momentum = opt.momentum
+optimStateScore.weightDecay = opt.weightDecay
 
 ----------------------------------------------------------------------
 print '==> defining training procedure'
 
 t = 0 -- batch counter
 totalErr = 0 -- totalErr accumelator
-function trainBatch(inputs, masks, classes, branch)
+function trainBatch(branch, classes, inputs, masks)
     inputs = inputs:cuda()
 
     -- disp progress
@@ -58,10 +71,16 @@ function trainBatch(inputs, masks, classes, branch)
 
     -- create closure to evaluate f(X) and df/dX
     local feval = function(x)
+        -- TODO: eliminate code duplication
         -- get new parameters
-        if x ~= parameters then
-            print(parameters:size())
-            parameters:copy(x)
+        if branch == 1 then
+            if x ~= maskParameters then
+                maskParameters:copy(x)
+            end
+        else
+            if x ~= scoreParameters then
+                scoreParameters:copy(x)
+            end
         end
 
         -- evaluate function for complete mini batch - estimate f
@@ -71,11 +90,11 @@ function trainBatch(inputs, masks, classes, branch)
 
             masks = masks:cuda()
             local outputs = mask:forward(inputs)
-            err = maskCriterion:forward(outputs, masks) -- TODO: normalize the loss somehow
-            local df_do = maskCriterion:backward(output, masks)
+            err = maskCriterion:forward(outputs, masks)
+            local df_do = maskCriterion:backward(outputs, masks)
             mask:backward(inputs, df_do)
 
-            return err,maskGradParameters
+            return err, maskGradParameters
         else
             score:zeroGradParameters()
 
@@ -89,14 +108,14 @@ function trainBatch(inputs, masks, classes, branch)
             confusion:batchAdd(outputs, classes)
 
             -- return f and df/dX
-            return err,scoreGradParameters
+            return err, scoreGradParameters
         end
     end
 
     if branch == 1 then
-        optim.sgd(feval, maskParameters, optimState)
+        optim.sgd(feval, maskParameters, optimStateMask)
     else
-        optim.sgd(feval, scoreParameters, optimState)
+        optim.sgd(feval, scoreParameters, optimStateScore)
     end
 
     -- garbage collection after every batch
@@ -144,12 +163,22 @@ function train()
 
     -- print confusion matrix  & error funstion values
     logConfusion(confusion, totalErr)
-    -- save current network
-    logNetwork(net, optimState)
+    -- save current networks
+    logNetwork(mask, 'deepmask_mask')
+    logNetwork(score, 'deepmask_score')
+    -- save optim states
+    logOptimState(optimStateMask, 'deepmask_mask')
+    collectgarbage()
+    logOptimState(optimStateScore, 'deepmask_score')
+    collectgarbage()
 
     -- check all model parameters validity
-    MyAssert(isValid(parameters), "non-valid model parameters")
-    MyAssert(isValid(gradParameters), "non-valid model gradParameters")
+    -- just print warning for now
+    useAssert=false
+    MyAssert(isValid(maskParameters), "non-valid model parameters")
+    MyAssert(isValid(maskGradParameters), "non-valid model gradParameters")
+    MyAssert(isValid(scoreParameters), "non-valid model parameters")
+    MyAssert(isValid(scoreGradParameters), "non-valid model gradParameters")
 
     -- next epoch
     confusion:zero()

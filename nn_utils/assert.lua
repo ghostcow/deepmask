@@ -10,7 +10,7 @@ function isnan(x)
 end
 
 function isinf(x)
-    -- nan is the only number not equal to itself
+    -- math.huge is a handle for inf
     if (x == math.huge) then
         return 1
     else
@@ -19,6 +19,7 @@ function isinf(x)
 end
 
 function isValid(tensor)
+    print(tensor)
     local z1 = tensor:clone():abs()
     local z2 = tensor:clone():abs()
     z1:apply(isnan) -- check for nan's

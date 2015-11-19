@@ -10,4 +10,4 @@ th doall.lua --gpu 1 \
              --epochs 1 \
              --learningRate 0.001 \
              --batchSize 32 \
-             --epochSize 1
+             --epochSize 4

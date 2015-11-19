@@ -55,11 +55,12 @@ function dataset:__init(...)
 end
 
 -- converts a table/tds.vec of samples (and corresponding labels) to a clean tensor
-local function tableToOutput(patchTable, maskTable, labelTable, branch)
+local function tableToOutput(branch, labelTable, patchTable, maskTable)
     local patches, masks, labels
     local quantity = #patchTable
     patches = torch.Tensor(quantity, 3, 224, 224)
     labels = torch.Tensor(quantity)
+
     for i=1,quantity do
         patches[i]:copy(patchTable[i])
         labels[i] = labelTable[i]
@@ -88,8 +89,8 @@ function dataset:get(batchSize, branch)
             table.insert(maskTable, mask)
             table.insert(labelTable, label)
         end
-        local patches, masks, labels = tableToOutput(patchTable, maskTable, labelTable, branch)
-        return patches, masks, labels, branch
+        local patches, masks, labels = tableToOutput(branch, labelTable, patchTable, maskTable)
+        return branch, labels, patches, masks
     else
         -- sample scores only
         for _=1,batchSize do
@@ -97,8 +98,8 @@ function dataset:get(batchSize, branch)
             table.insert(patchTable, patch)
             table.insert(labelTable, label)
         end
-        local patches, labels = tableToOutput(patchTable, nil, labelTable, branch)
-        return patches, nil, labels, branch
+        local patches, labels = tableToOutput(branch, labelTable, patchTable)
+        return branch, labels, patches
     end
 end
 

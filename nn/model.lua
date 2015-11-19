@@ -36,21 +36,21 @@ end
 
 -- 2. Create Criterion
 -- mask criterion
-mcriterion = nn.BCECriterion()
+maskCriterion = nn.BCECriterion()
 print('=> Mask Prediction Model')
 print(mask)
 print('=> Mask Criterion')
-print(mcriterion)
+print(maskCriterion)
 -- score criterion
-scriterion = nn.CrossEntropyCriterion()
+scoreCriterion = nn.CrossEntropyCriterion()
 print('=> Score Prediction Model')
 print(score)
 print('=> Score Criterion')
-print(scriterion)
+print(scoreCriterion)
 
 -- 4. Convert Criterion to CUDA
 print('=> Converting Criterions and Models to CUDA')
 mask:cuda()
-mcriterion:cuda()
+maskCriterion:cuda()
 score:cuda()
-scriterion:cuda()
+scoreCriterion:cuda()
