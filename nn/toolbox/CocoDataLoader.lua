@@ -146,7 +146,7 @@ function dataset:sampleInstance(inst)
 
     if ann.iscrowd == 0 then
 
-        local im = self:loadImg(img_ann.file_name)
+        local im = self:loadImg(img_ann.id)
         local raw_mask = self:loadMask(img_ann.id, ann.id)
 
         local xcm, ycm = getCenterMass(raw_mask)
@@ -217,7 +217,7 @@ function dataset:sampleNegative()
                 end
             end
             if not tooClose then
-                rawPatch = image.crop(self:loadImg(self.imgs[imgId].file_name),
+                rawPatch = image.crop(self:loadImg(imgId),
                     x/scale, y/scale,
                     (x+224-1)/scale, (y+224-1)/scale)
             end
@@ -243,13 +243,19 @@ function dataset:instanceTooClose(x, y, imgId, instIdx, instance, scale)
 end
 
 function dataset:loadMask(imgId, instId)
+    local width, height = self:getImageInfo(imgId)
     local rawMaskPath = paths.concat(self.ann_dir, imgId, instId .. '.png')
-    return self.img:load(rawMaskPath):toTensor('float', 'I', 'DHW')
+    return gm.Image(rawMaskPath, width, height):toTensor('float', 'I', 'DHW')
 end
 
-function dataset:loadImg(imgName)
-    local imgPath = paths.concat(self.image_dir, imgName)
-    return self.img:load(imgPath):toTensor('float', 'RGB', 'DHW')
+function dataset:loadImg(imgId)
+    local width, height, name = self:getImageInfo(imgId)
+    local imgPath = paths.concat(self.image_dir, name)
+    return gm.Image(imgPath, width, height):toTensor('float', 'RGB', 'DHW')
+end
+
+function dataset:getImageInfo(imgId)
+    return self.imgs[imgId].width, self.imgs[imgId].height, self.imgs[imgId].filename
 end
 
 function dataset:sizeTrain()
