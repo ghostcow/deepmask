@@ -9,6 +9,6 @@ th doall.lua --gpu 1 \
              --imageDirPath /home/lioruzan/obj_detection_proj/data/coco/images \
              --epochs 10 \
              --learningRate 0.001 \
-             --batchSize 32 \
-             --epochSize 125 \
+             --batchSize 1 \
+             --epochSize 2000 \
              --nWorkers 0

@@ -149,7 +149,6 @@ function train()
             -- the end callback
             -- ran in the main thread
             trainBatch)
-        collectgarbage()
     end
 
     -- wait for all jobs to finish

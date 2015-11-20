@@ -20,8 +20,8 @@ end
 ----------------------------------------------------------------------
 print '==> executing all'
 dofile 'data.lua'
-paths.dofile('model.lua')
-paths.dofile('train.lua')
+dofile 'model.lua'
+dofile 'train.lua'
 --paths.dofile('test.lua')
 
 ----------------------------------------------------------------------
