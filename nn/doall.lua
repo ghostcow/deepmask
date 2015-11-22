@@ -1,3 +1,4 @@
+require 'torch'
 require 'options'
 require 'paths'
 package.path = package.path .. ";" .. 'toolbox/?.lua' .. ";" .. '../nn_utils/?.lua'

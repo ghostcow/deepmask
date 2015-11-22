@@ -72,7 +72,7 @@ function trimModel(trainedModel)
 
         collectgarbage()
     end
-
+    -- first transfer model to float and only then clone (helps if model takes up more than half of the GPU)
     return trainedModel:float():clone()
 end
 
