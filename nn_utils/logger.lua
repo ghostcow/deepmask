@@ -73,10 +73,10 @@ function trimModel(trainedModel)
         collectgarbage()
     end
 
-    return trainedModel:clone():float()
+    return trainedModel:float():clone()
 end
 
-function logNetwork(trainedModel, modelName)
+function logNetwork(trainedModel, modelName, originalType)
     if modelName == nil then
         modelName = 'model'
     end
@@ -88,8 +88,10 @@ function logNetwork(trainedModel, modelName)
     print('==> saving model to '..state_file_path)
     os.rename(state_file_path, state_file_last_path)
 
+    -- transfer model to RAM, clone, save, return to CudaTensor (or previous type)
     local fmodel = trimModel(trainedModel)
     torch.save(state_file_path, fmodel)
+    trainedModel:type(originalType)
 end
 
 function logOptimState(optimState, modelName)

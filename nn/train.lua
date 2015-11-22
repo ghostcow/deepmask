@@ -162,13 +162,14 @@ function train()
     -- print confusion matrix & error function values
     logConfusion(confusion, totalMaskError, totalScoreError)
 
-    if epoch % 3 then
+    if epoch % 3 == 0 then
         -- save current networks
-        logNetwork(mask, 'deepmask_mask')
-        logNetwork(score, 'deepmask_score')
+        logNetwork(mask, 'deepmask_mask', 'torch.CudaTensor')
+        logNetwork(score, 'deepmask_score', 'torch.CudaTensor')
         -- save optim states
         logOptimState(optimStateMask, 'deepmask_mask')
         logOptimState(optimStateScore, 'deepmask_score')
+        collectgarbage()
     end
 
     -- check all model parameters validity

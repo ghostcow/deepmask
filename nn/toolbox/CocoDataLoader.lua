@@ -121,6 +121,7 @@ local function subtractMean(patch, mean)
     for i=1,3 do
         patch[i]:csub(mean[i])
     end
+    return patch
 end
 
 function dataset:samplePositive(branch)

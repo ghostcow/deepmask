@@ -21,7 +21,6 @@ function getOptions()
     cmd:option('--splitName', 'train2014', 'split name')
 	cmd:option('--dataPath', '', 'path to dataset files - *.tds.t7 files')
     cmd:option('--imageDirPath', '/Users/adamp/Research/Data/CASIA/CASIA-WebFace', 'path to dataset directory')
-    cmd:option('--imageSize', '1x100x100', 'size of sample images')
     cmd:option('--nWorkers', 4, 'number of threads used for data loading')
 
 	-- training:
@@ -42,11 +41,11 @@ function getOptions()
     cmd:text()
     
     local opt = cmd:parse(arg or {})
-    opt.imageSize = parseImageSize(opt.imageSize)
-    print(opt.imageSize)
 
     paths.mkdir(opt.save)
-    cmd:log(paths.concat(opt.save, 'doall.log'), opt)
+    -- append random number to log name
+    local r = torch.random() % 10000
+    cmd:log(paths.concat(opt.save, 'doall.'..tostring(r)..'.log'), opt)
     return opt
 end
 

@@ -16,4 +16,15 @@ th doall.lua --gpu 1 \
              --learningRate 0.001 \
              --batchSize 64 \
              --epochSize 8916 \
-             --nWorkers 4
+             --nWorkers 3
+
+# For testing
+#th doall.lua --gpu 1 \
+#             --splitName train2014 \
+#             --dataPath /home/lioruzan/obj_detection_proj/mscoco.torch/annotations \
+#             --imageDirPath /home/lioruzan/obj_detection_proj/data/coco/images \
+#             --epochs 100 \
+#             --learningRate 0.001 \
+#             --batchSize 1 \
+#             --epochSize 1 \
+#             --nWorkers 0
