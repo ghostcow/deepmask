@@ -29,20 +29,22 @@ function logCosts(nllTotalErr, kdTotalErr, totalErr)
                     ['% total cost function value'] = totalErr}
 end
 
-function logConfusion(confusion, totalErr, saveConfusion)
+function logConfusion(confusion, totalMaskError, totalScoreError, saveConfusion)
     -- print confusion matrix  & error funstion values
     confusion:updateValids()
-    print("accuracy = ", confusion.totalValid * 100)
+    print("Score Branch Accuracy = ", confusion.totalValid * 100)
 
     if saveConfusion ~= nil then
         local filename_confusion = paths.concat(logDir, 'confusion_train')
         torch.save(filename_confusion, confusion)
     end
 
-    print('Error = '..tostring(totalErr))
+    print('Mask Branch Error = '..tostring(totalMaskError))
+    print('Score Branch Error = '..tostring(totalScoreError))
     trainLogger:add{['% total accuracy'] = confusion.totalValid * 100,
                     ['% average accuracy'] = confusion.averageValid * 100,
-                    ['% total cost function error'] = totalErr}
+                    ['% mask loss error'] = totalMaskError,
+                    ['% score loss error'] = totalScoreError}
     if opt.plot then
         trainLogger:style{['% total accuracy'] = '-'}
         trainLogger:plot()

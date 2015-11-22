@@ -50,8 +50,8 @@ function dataset:__init(...)
     self.cat2class = torch.load(prefix .. '.cat2class.tds.t7') -- class means the class we train with (1,80 range)
     self.cat2inst  = torch.load(prefix .. '.cat2instance.tds.t7')
 
-    -- image buffers
-    self.img = gm.Image()
+    -- subtract mean from RGB channels (ImageNet mean, from VGG Gist)
+    self.mean = {123.68, 116.779, 103.939}
 end
 
 -- converts a table/tds.vec of samples (and corresponding labels) to a clean tensor
@@ -116,6 +116,13 @@ function dataset:sample(branch)
     end
 end
 
+-- subtracts mean from input RGB image
+local function subtractMean(patch, mean)
+    for i=1,3 do
+        patch[i]:csub(mean[i])
+    end
+end
+
 function dataset:samplePositive(branch)
     -- returns a sample with an object in it,
     -- randomized over class, augmentations:
@@ -129,9 +136,9 @@ function dataset:samplePositive(branch)
     end
 
     if branch == 1 then
-        return patch, mask, label
+        return subtractMean(patch, self.mean), mask, label
     else
-        return patch, label
+        return subtractMean(patch, self.mean), label
     end
 end
 
@@ -190,7 +197,6 @@ function dataset:sampleInstance(inst)
     return nil
 end
 
--- TODO: debug
 function dataset:sampleNegative()
     local rawPatch
     while rawPatch == nil do
@@ -224,7 +230,7 @@ function dataset:sampleNegative()
         end
     end
     -- scale and return. class 81 is background
-    return image.scale(rawPatch, 224, 224), 81
+    return subtractMean(image.scale(rawPatch, 224, 224), self.mean), 81
 end
 
 function dataset:instanceTooClose(x, y, imgId, instIdx, instance, scale)
@@ -255,7 +261,7 @@ function dataset:loadImg(imgId)
 end
 
 function dataset:getImageInfo(imgId)
-    return self.imgs[imgId].width, self.imgs[imgId].height, self.imgs[imgId].filename
+    return self.imgs[imgId].width, self.imgs[imgId].height, self.imgs[imgId].file_name
 end
 
 function dataset:sizeTrain()

@@ -54,7 +54,8 @@ optimStateScore = tx.copy(optimState)
 print '==> defining training procedure'
 
 t = 0 -- batch counter
-totalErr = 0 -- totalErr accumelator
+totalMaskError = 0 -- totalErr accumulator
+totalScoreError = 0 -- totalErr accumulator
 local function trainBatch(branch, classes, inputs, masks)
     inputs = inputs:cuda()
 
@@ -76,31 +77,31 @@ local function trainBatch(branch, classes, inputs, masks)
         end
 
         -- evaluate function for complete mini batch - estimate f
-        local err
         if branch == 1 then
             mask:zeroGradParameters()
 
             masks = masks:cuda()
             local outputs = mask:forward(inputs)
-            err = maskCriterion:forward(outputs, masks)
+            local maskError = maskCriterion:forward(outputs, masks)
             local df_do = maskCriterion:backward(outputs, masks)
             mask:backward(inputs, df_do)
-
-            return err, maskGradParameters
+            -- update total error
+            totalMaskError = totalMaskError + maskError
+            return maskError, maskGradParameters
         else
             score:zeroGradParameters()
 
             classes = classes:cuda()
             local outputs = score:forward(inputs)
-            err = scoreCriterion:forward(outputs, classes)
+            local scoreError = scoreCriterion:forward(outputs, classes)
             local df_do = scoreCriterion:backward(outputs, classes)
             score:backward(inputs, df_do)
 
-            -- update confusion
+            -- update confusion, total error
             confusion:batchAdd(outputs, classes)
-
+            totalScoreError = totalScoreError + scoreError
             -- return f and df/dX
-            return err, scoreGradParameters
+            return scoreError, scoreGradParameters
         end
     end
 
@@ -152,24 +153,26 @@ function train()
     end
 
     -- wait for all jobs to finish
-    print("Waiting for jobs to finish!")
     workers:synchronize()
 
     -- time taken
     local time = timer:time().real / sizeTrain()
     print("\n==> time to learn 1 sample = " .. (time*1000) .. 'ms')
 
-    -- print confusion matrix  & error funstion values
-    logConfusion(confusion, totalErr)
-    -- save current networks
---    logNetwork(mask, 'deepmask_mask')
---    logNetwork(score, 'deepmask_score')
-    -- save optim states
---    logOptimState(optimStateMask, 'deepmask_mask')
---    logOptimState(optimStateScore, 'deepmask_score')
+    -- print confusion matrix & error function values
+    logConfusion(confusion, totalMaskError, totalScoreError)
+
+    if epoch % 3 then
+        -- save current networks
+        logNetwork(mask, 'deepmask_mask')
+        logNetwork(score, 'deepmask_score')
+        -- save optim states
+        logOptimState(optimStateMask, 'deepmask_mask')
+        logOptimState(optimStateScore, 'deepmask_score')
+    end
 
     -- check all model parameters validity
-    -- just print warning for now
+    -- TODO: fix code to not exceed luajit's memory
 --    useAssert=false
 --    MyAssert(isValid(maskParameters), "non-valid model parameters")
 --    MyAssert(isValid(maskGradParameters), "non-valid model gradParameters")
@@ -177,6 +180,8 @@ function train()
 --    MyAssert(isValid(scoreGradParameters), "non-valid model gradParameters")
 
     -- next epoch
+    totalMaskError = 0
+    totalScoreError = 0
     confusion:zero()
     epoch = epoch + 1
 end
