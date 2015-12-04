@@ -9,7 +9,6 @@ function getOptions()
 
 	-- global:
 	cmd:option('--seed', 1, 'fixed input seed for repeatable experiments')
-	cmd:option('--threads', 2, 'number of threads')
 	cmd:option('--visualize', false, 'visualize input data and weights during training')
     cmd:option('--retrain', 'none', 'load exisiting state : pre-trained net')
     cmd:option('--loadState', 'none', 'load optim state')

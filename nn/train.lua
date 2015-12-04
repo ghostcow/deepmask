@@ -59,9 +59,6 @@ totalScoreError = 0 -- totalErr accumulator
 local function trainBatch(branch, classes, inputs, masks)
     inputs = inputs:cuda()
 
-    -- current progress
-    xlua.progress(t, sizeTrain())
-
     -- create closure to evaluate f(X) and df/dX
     local feval = function(x)
         -- TODO: eliminate code duplication
@@ -163,6 +160,10 @@ function train()
     logConfusion(confusion, totalMaskError, totalScoreError)
 
     if epoch % 3 == 0 then
+        -- print CUDA memory usage prior to save
+        local freeMemory, totalMemory = cutorch.getMemoryUsage(opt.gpu)
+        print('GPU freeMemory='..tostring(freeMemory))
+        print('GPU totalMemory='..tostring(totalMemory))
         -- save current networks
         logNetwork(mask, 'deepmask_mask', 'torch.CudaTensor')
         logNetwork(score, 'deepmask_score', 'torch.CudaTensor')
