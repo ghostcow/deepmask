@@ -35,7 +35,7 @@ maskParameters, maskGradParameters = mask:getParameters()
 scoreParameters, scoreGradParameters = score:getParameters()
 
 ----------------------------------------------------------------------
-print '==> configuring optimizer - SGD'
+print '==> configuring optimizer - AdaDelta'
 
 optimState = {}
 
@@ -43,9 +43,9 @@ if opt.loadState ~= 'none' then
     optimState = torch.load(opt.loadState)
 end
 
-optimState.learningRate = opt.learningRate
-optimState.momentum = opt.momentum
-optimState.weightDecay = opt.weightDecay
+--optimState.learningRate = opt.learningRate
+--optimState.momentum = opt.momentum
+--optimState.weightDecay = opt.weightDecay
 
 optimStateMask = tx.copy(optimState)
 optimStateScore = tx.copy(optimState)
@@ -58,9 +58,6 @@ totalMaskError = 0 -- totalErr accumulator
 totalScoreError = 0 -- totalErr accumulator
 local function trainBatch(branch, classes, inputs, masks)
     inputs = inputs:cuda()
-
-    -- current progress
-    xlua.progress(t, sizeTrain())
 
     -- create closure to evaluate f(X) and df/dX
     local feval = function(x)
@@ -106,7 +103,7 @@ local function trainBatch(branch, classes, inputs, masks)
     end
 
     if branch == 1 then
-        optim.sgd(feval, maskParameters, optimStateMask)
+        optim.adadelta(feval, maskParameters, optimStateMask)
     else
         optim.sgd(feval, scoreParameters, optimStateScore)
     end
@@ -164,11 +161,11 @@ function train()
 
     if epoch % 3 == 0 then
         -- save current networks
-        logNetwork(mask, 'deepmask_mask', 'torch.CudaTensor')
-        logNetwork(score, 'deepmask_score', 'torch.CudaTensor')
+--        logNetwork(mask, 'deepmask_mask', 'torch.CudaTensor')
+--        logNetwork(score, 'deepmask_score', 'torch.CudaTensor')
         -- save optim states
-        logOptimState(optimStateMask, 'deepmask_mask')
-        logOptimState(optimStateScore, 'deepmask_score')
+--        logOptimState(optimStateMask, 'deepmask_mask')
+--        logOptimState(optimStateScore, 'deepmask_score')
         collectgarbage()
     end
 

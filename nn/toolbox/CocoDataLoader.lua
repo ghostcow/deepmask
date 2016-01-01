@@ -116,6 +116,20 @@ function dataset:sample(branch)
     end
 end
 
+function dataset:preProcessPatch(im)
+  -- rescale the image
+  local im2 = image.scale(im, 224, 224, 'bilinear')
+  -- subtract imagenet mean
+  local im3 = subtractMean(im, self.mean)
+  -- RGB2BGR
+  return im3:index(1,torch.LongTensor{3,2,1})
+end
+
+local function preProcessMask(im)
+  -- rescale the image
+  return image.scale(im, 224, 224, 'bilinear')
+end
+
 -- subtracts mean from input RGB image
 local function subtractMean(patch, mean)
     for i=1,3 do
@@ -137,9 +151,9 @@ function dataset:samplePositive(branch)
     end
 
     if branch == 1 then
-        return subtractMean(patch, self.mean), mask, label
+        return patch, mask, label
     else
-        return subtractMean(patch, self.mean), label
+        return patch, label
     end
 end
 
@@ -190,7 +204,8 @@ function dataset:sampleInstance(inst)
                     mask = image.hflip(mask)
                 end
                 -- scale to 224x224 and return
-                return image.scale(patch, 224, 224), image.scale(mask, 224, 224), self.cat2class[ann.category_id]
+                --return image.scale(patch, 224, 224), image.scale(mask, 224, 224), self.cat2class[ann.category_id]
+                return preProcessPatch(patch), preProcessMask(mask), self.cat2class[ann.category_id]
             end
         end
     end
@@ -231,7 +246,8 @@ function dataset:sampleNegative()
         end
     end
     -- scale and return. class 81 is background
-    return subtractMean(image.scale(rawPatch, 224, 224), self.mean), 81
+    --return subtractMean(image.scale(rawPatch, 224, 224), self.mean), 81
+    return preProcessPatch(rawPatch), 81
 end
 
 function dataset:instanceTooClose(x, y, imgId, instIdx, instance, scale)
