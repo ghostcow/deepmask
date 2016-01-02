@@ -160,6 +160,10 @@ function train()
     logConfusion(confusion, totalMaskError, totalScoreError)
 
     if epoch % 3 == 0 then
+        -- print CUDA memory usage prior to save
+        local freeMemory, totalMemory = cutorch.getMemoryUsage(opt.gpu)
+        print('GPU freeMemory='..tostring(freeMemory))
+        print('GPU totalMemory='..tostring(totalMemory))
         -- save current networks
 --        logNetwork(mask, 'deepmask_mask', 'torch.CudaTensor')
 --        logNetwork(score, 'deepmask_score', 'torch.CudaTensor')
