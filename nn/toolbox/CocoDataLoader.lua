@@ -125,8 +125,8 @@ local function subtractMean(im, mean)
 end
 
 local function preProcessPatch(im, mean)
-  -- rescale the image
-  local im2 = image.scale(im, 224, 224, 'bilinear')
+  -- rescale the image and return it to range 0..255
+  local im2 = image.scale(im, 224, 224, 'bilinear') * 255
   -- subtract imagenet mean
   local im3 = subtractMean(im2, mean)
   -- RGB2BGR

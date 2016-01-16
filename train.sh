@@ -15,8 +15,8 @@ th doall.lua --gpu 1 \
              --dataPath /home/lioruzan/obj_detection_proj/mscoco.torch/annotations \
              --imageDirPath /home/lioruzan/obj_detection_proj/data/coco/images \
              --epochs 1000 \
-             --learningRate 0.001 \
+             --learningRate 0.01 \
              --batchSize 32 \
              --epochSize 17833 \
-             --nWorkers 2 \
+             --nWorkers 3 \
              --negativeRatio 0.024
